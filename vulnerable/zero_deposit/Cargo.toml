@@ -2,6 +2,9 @@
 name = "zero-deposit"
 version = "0.1.0"
 edition = "2021"
+description = "Vulnerable Soroban contract that accepts zero-value deposits"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
 
 [lib]
 crate-type = ["cdylib"]

@@ -2,6 +2,9 @@
 name = "string-admin"
 version = "0.1.0"
 edition = "2021"
+description = "Vulnerable Soroban contract using a plain string as an admin identifier"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
 
 [lib]
 crate-type = ["cdylib"]

@@ -39,6 +39,7 @@ pub struct TimeLockVault;
 
 #[contractimpl]
 impl TimeLockVault {
+    /// Initialise the vault with an admin. Guards against re-init.
     pub fn initialize(env: Env, admin: Address) {
         if env.storage().persistent().has(&DataKey::Admin) {
             panic!("already initialized");
@@ -46,7 +47,7 @@ impl TimeLockVault {
         env.storage().persistent().set(&DataKey::Admin, &admin);
     }
 
-    /// Deposit funds locked until `unlock_ledger`.
+    /// Deposit `amount` locked until `unlock_ledger`. Requires user auth.
     pub fn deposit(env: Env, user: Address, amount: i128, unlock_ledger: u32) {
         user.require_auth();
         let new_bal = get_balance(&env, &user) + amount;
@@ -56,7 +57,7 @@ impl TimeLockVault {
             .set(&DataKey::UnlockLedger(user), &unlock_ledger);
     }
 
-    /// Normal withdraw — only after lock expires.
+    /// Normal withdraw — only callable after the lock ledger has passed. Requires user auth.
     pub fn withdraw(env: Env, user: Address) {
         user.require_auth();
         let unlock: u32 = env
@@ -85,12 +86,14 @@ impl TimeLockVault {
             .remove(&DataKey::UnlockLedger(user));
     }
 
+    /// Returns the current balance of `user`, defaulting to 0.
     pub fn balance(env: Env, user: Address) -> i128 {
         get_balance(&env, &user)
     }
 
+    /// Returns the stored admin address.
     pub fn get_admin(env: Env) -> Address {
-        env.storage().persistent().get(&DataKey::Admin).unwrap()
+        env.storage().persistent().get(&DataKey::Admin).expect("admin not initialized")
     }
 }
 

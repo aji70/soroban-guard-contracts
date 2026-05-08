@@ -19,8 +19,10 @@ pub struct TokenContract;
 
 #[contractimpl]
 impl TokenContract {
-    /// Mint tokens to an address (admin-only in a real contract — unprotected here).
-    /// VULNERABLE: No event emitted for off-chain tracking.
+    /// Mint tokens to an address. No auth check — unprotected by design for test setup.
+    ///
+    /// # Vulnerability
+    /// No event emitted — off-chain indexers cannot track this supply change.
     pub fn mint(env: Env, to: Address, amount: i128) {
         // ❌ No env.events().publish() — off-chain indexers are blind to this
         let key = DataKey::Balance(to);
@@ -37,8 +39,7 @@ impl TokenContract {
         env.storage().persistent().set(&key, &(current - amount));
     }
 
-    /// Transfer tokens between addresses.
-    /// This function correctly emits events for comparison.
+    /// Transfer tokens between addresses. Emits a transfer event — shown as the correct pattern.
     pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
         let from_key = DataKey::Balance(from.clone());
         let to_key = DataKey::Balance(to.clone());
@@ -57,6 +58,7 @@ impl TokenContract {
             .publish((symbol_short!("transfer"),), (from, to, amount));
     }
 
+    /// Returns the balance of `account`, defaulting to 0.
     pub fn balance(env: Env, account: Address) -> i128 {
         env.storage()
             .persistent()

@@ -44,6 +44,7 @@ pub struct VulnerableRegistry;
 
 #[contractimpl]
 impl VulnerableRegistry {
+    /// Initialise the registry with an admin address. Guards against re-init.
     pub fn initialize(env: Env, admin: Address) {
         if env.storage().persistent().has(&DataKey::Admin) {
             panic!("already initialized");
@@ -51,6 +52,7 @@ impl VulnerableRegistry {
         env.storage().persistent().set(&DataKey::Admin, &admin);
     }
 
+    /// Register `scanner` as an approved scanner. Requires admin auth.
     pub fn add_scanner(env: Env, scanner: Address) {
         Self::require_admin(&env);
         env.storage()
@@ -58,6 +60,7 @@ impl VulnerableRegistry {
             .set(&DataKey::Scanner(scanner), &true);
     }
 
+    /// Returns `true` if `scanner` is in the approved scanner list.
     pub fn is_scanner(env: Env, scanner: Address) -> bool {
         env.storage()
             .persistent()
@@ -108,12 +111,14 @@ impl VulnerableRegistry {
         env.storage().persistent().set(&history_key, &history);
     }
 
+    /// Returns the latest scan result for `contract_address`, or `None`.
     pub fn get_scan(env: Env, contract_address: Address) -> Option<ScanResult> {
         env.storage()
             .persistent()
             .get(&DataKey::LatestScan(contract_address))
     }
 
+    /// Returns the full scan history for `contract_address`, or an empty vec.
     pub fn get_history(env: Env, contract_address: Address) -> Vec<ScanResult> {
         env.storage()
             .persistent()
@@ -160,7 +165,12 @@ mod tests {
 
         let target = Address::generate(&env);
         client.add_scanner(&scanner);
-        client.submit_scan(&scanner, &target, &String::from_str(&env, "hash1"), &counts(&env));
+        client.submit_scan(
+            &scanner,
+            &target,
+            &String::from_str(&env, "hash1"),
+            &counts(&env),
+        );
 
         let result = client.get_scan(&target).unwrap();
         assert_eq!(result.scanner, scanner);

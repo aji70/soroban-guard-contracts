@@ -91,7 +91,7 @@ pub struct FlashLoanNoCheck;
 
 #[contractimpl]
 impl FlashLoanNoCheck {
-    /// Seed the lending pool.
+    /// Seed the lending pool with `amount` tokens from `from`. Requires from auth.
     pub fn deposit(env: Env, from: Address, amount: i128) {
         from.require_auth();
         let current: i128 = env
@@ -122,14 +122,13 @@ impl FlashLoanNoCheck {
             .set(&DataKey::PoolBalance, &(pool - amount));
 
         // Invoke borrower — they are supposed to repay, but we never verify.
-        callback::BorrowerClient::new(&env, &borrower).on_flash_loan(
-            &env.current_contract_address(),
-            &amount,
-        );
+        callback::BorrowerClient::new(&env, &borrower)
+            .on_flash_loan(&env.current_contract_address(), &amount);
 
         // ❌ Missing: assert pool balance >= pool_before
     }
 
+    /// Returns the current pool balance, defaulting to 0.
     pub fn pool_balance(env: Env) -> i128 {
         env.storage()
             .persistent()
@@ -144,8 +143,8 @@ impl FlashLoanNoCheck {
 // call stack), then the lender reads it after the callback returns.
 
 pub mod honest {
-    use soroban_sdk::{contract, contractimpl, Address, Env};
     use super::{DataKey, RepaymentLedgerClient};
+    use soroban_sdk::{contract, contractimpl, Address, Env};
 
     #[contract]
     pub struct HonestBorrower;

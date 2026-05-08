@@ -2,6 +2,9 @@
 name = "no-slippage"
 version = "0.1.0"
 edition = "2021"
+description = "Vulnerable Soroban AMM contract with no slippage protection"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
 
 [lib]
 crate-type = ["cdylib"]

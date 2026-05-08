@@ -44,7 +44,7 @@ impl SequenceLockedVault {
         user.require_auth();
 
         let unlock_key = DataKey::UnlockSequence(user.clone());
-        let unlock_sequence: u32 = env.storage().persistent().get(&unlock_key).unwrap();
+        let unlock_sequence: u32 = env.storage().persistent().get(&unlock_key).expect("unlock sequence not set");
 
         // ✅ SECURE: Ledger sequences are monotonically increasing and immutable
         // No validator can manipulate this - sequences advance exactly once per ledger

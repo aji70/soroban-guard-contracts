@@ -1,0 +1,13 @@
+[package]
+name = "escrow-balance-check"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban escrow contract that releases funds without checking the escrow balance"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

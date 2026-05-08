@@ -1,0 +1,13 @@
+[package]
+name = "silent-admin-change"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract demonstrating silent admin change with no event emission"
+license = "MIT"
+repository = "https://github.com/Mirabliss/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

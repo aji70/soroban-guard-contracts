@@ -19,13 +19,13 @@ pub struct UnprotectedBurnToken;
 
 #[contractimpl]
 impl UnprotectedBurnToken {
-    /// Mint tokens to an address.
+    /// Mint `amount` tokens to `to`. Emits a `mint` event.
     pub fn mint(env: Env, to: Address, amount: i128) {
         let key = DataKey::Balance(to.clone());
         let current: i128 = env.storage().persistent().get(&key).unwrap_or(0);
         env.storage()
             .persistent()
-            .set(&key, &(current.checked_add(amount).unwrap()));
+            .set(&key, &(current.checked_add(amount).expect("mint overflow")));
         env.events()
             .publish((symbol_short!("mint"),), (to, amount));
     }
@@ -41,12 +41,13 @@ impl UnprotectedBurnToken {
         // No auth check — anyone can call this and burn tokens from any account
         env.storage()
             .persistent()
-            .set(&key, &(balance.checked_sub(amount).unwrap()));
+            .set(&key, &(balance.checked_sub(amount).expect("burn underflow")));
 
         env.events()
             .publish((symbol_short!("burn"),), (account, amount));
     }
 
+    /// Returns the balance of `account`, defaulting to 0.
     pub fn balance(env: Env, account: Address) -> i128 {
         env.storage()
             .persistent()

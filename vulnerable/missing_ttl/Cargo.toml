@@ -2,6 +2,9 @@
 name = "missing-ttl"
 version = "0.1.0"
 edition = "2021"
+description = "Vulnerable Soroban token contract where persistent storage TTL is never extended"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
 
 [lib]
 crate-type = ["cdylib"]

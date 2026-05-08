@@ -53,12 +53,14 @@ pub struct DoubleClaim;
 
 #[contractimpl]
 impl DoubleClaim {
+    /// Initialise the contract with a reward rate (tokens per ledger per staked token).
     pub fn initialize(env: Env, reward_rate: u64) {
         env.storage()
             .persistent()
             .set(&DataKey::RewardRate, &reward_rate);
     }
 
+    /// Record a stake for `staker` and snapshot the current ledger sequence as `staked_at`.
     pub fn stake(env: Env, staker: Address, amount: u64) {
         staker.require_auth();
         env.storage()
@@ -70,6 +72,9 @@ impl DoubleClaim {
     /// VULNERABLE: reward is computed from elapsed ledgers since `staked_at`,
     /// but `staked_at` is never updated. Calling this twice with the same
     /// ledger gap yields the same reward both times.
+    ///
+    /// # Vulnerability
+    /// Missing `set_staked_at` reset after payout. Impact: unlimited reward drain via repeated calls.
     pub fn claim_rewards(env: Env, staker: Address) -> u64 {
         staker.require_auth();
         let elapsed = env.ledger().sequence() - get_staked_at(&env, &staker);
@@ -85,7 +90,10 @@ impl DoubleClaim {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::{Address as _, Ledger}, Address, Env};
+    use soroban_sdk::{
+        testutils::{Address as _, Ledger},
+        Address, Env,
+    };
 
     fn setup() -> (Env, DoubleClaimClient<'static>, Address) {
         let env = Env::default();

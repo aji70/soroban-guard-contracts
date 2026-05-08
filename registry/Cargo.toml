@@ -2,6 +2,9 @@
 name = "registry"
 version = "0.1.0"
 edition = "2021"
+description = "On-chain scan result registry for Soroban Guard findings"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
 
 [lib]
 crate-type = ["cdylib"]

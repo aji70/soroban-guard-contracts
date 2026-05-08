@@ -36,6 +36,7 @@ impl VulnerableVault {
         env.storage().persistent().set(&key, &(current + amount));
     }
 
+    /// Returns the current balance of `user`, defaulting to 0.
     pub fn balance(env: Env, user: Address) -> i128 {
         env.storage()
             .persistent()

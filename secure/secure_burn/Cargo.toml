@@ -2,6 +2,9 @@
 name = "secure_burn"
 version = "0.1.0"
 edition = "2021"
+description = "Secure Soroban contract with authenticated token burn"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
 publish = false
 
 [lib]

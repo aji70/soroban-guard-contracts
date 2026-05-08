@@ -3,8 +3,8 @@
 //! Identical AMM logic but `swap` requires a `min_amount_out` argument and
 //! panics with `"slippage exceeded"` when the calculated output falls below it.
 
+use super::{apply_swap, calculate_out};
 use soroban_sdk::{contract, contractimpl, Address, Env};
-use super::{calculate_out, apply_swap};
 
 #[contract]
 pub struct SecureAmm;

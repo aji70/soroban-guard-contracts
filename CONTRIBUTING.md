@@ -183,3 +183,141 @@ docs: add missing_auth entry to vulnerabilities.md
 3. Ensure `cargo fmt --check` passes.
 4. Fill in the PR template — link to the relevant `docs/vulnerabilities.md`
    section and describe the real-world scenario the contract models.
+
+---
+
+## 8. Adding a New Vulnerability Pair
+
+This section walks you through adding a new `vulnerable/<name>` + `secure/<name>` pair from scratch.
+
+### Naming conventions
+
+- Use `snake_case` for all directory and crate names (e.g. `missing_auth`, `dust_griefing`).
+- Names should be descriptive of the vulnerability class, not the contract type.
+- The vulnerable crate is named `<name>` and lives in `vulnerable/<name>`.
+- The secure mirror is either a new crate in `secure/<name>` **or** an inline `secure` module at `vulnerable/<name>/src/secure.rs` — use whichever keeps the diff smallest.
+
+### Step-by-step
+
+**1. Create the vulnerable crate**
+
+```
+vulnerable/
+  <name>/
+    Cargo.toml
+    src/
+      lib.rs
+```
+
+`Cargo.toml` minimum:
+
+```toml
+[package]
+name = "<name>"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
+```
+
+**2. Create the secure mirror**
+
+Option A — separate crate (preferred when the secure version is substantially different):
+
+```
+secure/
+  <name>/
+    Cargo.toml
+    src/
+      lib.rs
+```
+
+Option B — inline module (preferred for small fixes):
+
+```rust
+// vulnerable/<name>/src/lib.rs
+pub mod secure;   // points to vulnerable/<name>/src/secure.rs
+```
+
+**3. Register both crates in the workspace**
+
+Add to the `members` array in the root `Cargo.toml`:
+
+```toml
+"vulnerable/<name>",
+"secure/<name>",   # omit if using inline secure module
+```
+
+**4. Write the vulnerable contract**
+
+- Add a module-level `//!` doc block explaining the vulnerability class, the missing guard, and the severity.
+- Add `/// rustdoc` to every `pub fn` covering: what it does, what is missing, and the impact.
+- Mark every flaw with an inline comment:
+
+```rust
+// ❌ Missing: <what the fix looks like>
+```
+
+**5. Write the secure mirror**
+
+- Mirror every vulnerable function with the fix applied.
+- Mark each fix with:
+
+```rust
+// ✅ FIX: <explain the change>
+```
+
+**6. Write tests — minimum 3 per contract**
+
+| Test | Purpose |
+|---|---|
+| `test_normal_<action>_works` | Happy path — normal operation succeeds |
+| `test_<vulnerability>_<effect>` | Demonstrates the vulnerability (bad thing happens) |
+| `test_secure_rejects_<attack>` | Secure mirror blocks the same attack |
+
+**7. Add a `docs/vulnerabilities.md` entry**
+
+Follow the existing format:
+
+```markdown
+## N. <Title> (`<name>`)
+
+**Contract:** `vulnerable/<name>` → `secure/<name>`
+**Severity:** Critical / High / Medium / Low
+
+### What it is
+...
+
+### Vulnerable pattern
+```rust
+// ❌ ...
+```
+
+### Secure fix
+```rust
+// ✅ ...
+```
+
+### Impact
+...
+```
+
+**8. Verify everything**
+
+```bash
+cargo build -p <name>
+cargo test -p <name>
+cargo fmt --check
+cargo doc --workspace --no-deps   # must produce zero warnings
+```
+
+**9. Open a PR**
+
+- Branch name: `feat/vuln-<name>`
+- PR title: `feat(<name>): add vulnerable/secure pair for <vulnerability class>`
+- Link to the `docs/vulnerabilities.md` section you added.
+- Reference the issue number if one exists.

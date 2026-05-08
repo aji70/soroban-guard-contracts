@@ -4,8 +4,8 @@
 //! RepaymentLedger and panics if the full loan was not recorded as repaid.
 //! The pool balance is also restored from the ledger.
 
+use super::{callback, DataKey, RepaymentLedgerClient};
 use soroban_sdk::{contract, contractimpl, Address, Env};
-use super::{DataKey, RepaymentLedgerClient, callback};
 
 #[contract]
 pub struct SecureFlashLoan;
@@ -44,10 +44,8 @@ impl SecureFlashLoan {
             .set(&DataKey::PoolBalance, &(balance_before - amount));
 
         // Invoke borrower callback.
-        callback::BorrowerClient::new(&env, &borrower).on_flash_loan(
-            &env.current_contract_address(),
-            &amount,
-        );
+        callback::BorrowerClient::new(&env, &borrower)
+            .on_flash_loan(&env.current_contract_address(), &amount);
 
         // ✅ SECURE: Read repayment from the neutral ledger contract.
         let repaid = RepaymentLedgerClient::new(&env, &ledger).consume_repayment();
@@ -75,8 +73,8 @@ impl SecureFlashLoan {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{dishonest, honest, DataKey, RepaymentLedger};
     use soroban_sdk::{testutils::Address as _, Address, Env};
-    use crate::{honest, dishonest, RepaymentLedger, DataKey};
 
     fn setup(env: &Env) -> (Address, SecureFlashLoanClient<'_>) {
         let id = env.register_contract(None, SecureFlashLoan);

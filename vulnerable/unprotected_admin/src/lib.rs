@@ -21,6 +21,7 @@ pub struct EscrowContract;
 
 #[contractimpl]
 impl EscrowContract {
+    /// One-time initialisation — stores `admin` and guards against re-init.
     pub fn initialize(env: Env, admin: Address) {
         if env.storage().persistent().has(&DataKey::Admin) {
             panic!("already initialized");
@@ -43,6 +44,7 @@ impl EscrowContract {
         env.deployer().update_current_contract_wasm(new_wasm_hash);
     }
 
+    /// Deposit `amount` into the escrow for `depositor`. Requires depositor auth.
     pub fn deposit(env: Env, depositor: Address, amount: i128) {
         depositor.require_auth();
         let key = DataKey::Escrow(depositor.clone());
@@ -51,7 +53,7 @@ impl EscrowContract {
     }
 
     pub fn get_admin(env: Env) -> Address {
-        env.storage().persistent().get(&DataKey::Admin).unwrap()
+        env.storage().persistent().get(&DataKey::Admin).expect("admin not initialized")
     }
 }
 

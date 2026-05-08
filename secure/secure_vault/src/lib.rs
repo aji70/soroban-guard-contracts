@@ -32,8 +32,7 @@ impl SecureVault {
         env.storage().persistent().set(&key, &new_balance);
 
         // ✅ SECURE: Emit event for off-chain tracking
-        env.events()
-            .publish((symbol_short!("mint"),), (to, amount));
+        env.events().publish((symbol_short!("mint"),), (to, amount));
     }
 
     /// Burn tokens from an address.

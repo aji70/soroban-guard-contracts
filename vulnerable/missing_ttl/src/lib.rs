@@ -39,6 +39,7 @@ pub struct VulnerableToken;
 
 #[contractimpl]
 impl VulnerableToken {
+    /// Mint `amount` tokens to `to`. No auth check — unprotected by design for test setup.
     pub fn mint(env: Env, to: Address, amount: i128) {
         let current = get_balance(&env, &to);
         let new_balance = current.checked_add(amount).expect("mint: balance overflow");
@@ -46,11 +47,20 @@ impl VulnerableToken {
         set_balance(&env, &to, new_balance);
     }
 
+    /// Returns the balance of `account`. Defaults to 0 if the entry has expired or never existed.
+    ///
+    /// # Vulnerability
+    /// Missing `extend_ttl` — reading an expired entry returns 0, silently hiding lost funds.
     pub fn balance(env: Env, account: Address) -> i128 {
         // ❌ No persistent().extend_ttl(...) after the read.
         get_balance(&env, &account)
     }
 
+    /// VULNERABLE: transfers `amount` from `from` to `to` without renewing either balance entry's TTL.
+    /// After the network's max TTL window, both entries expire and balances read as 0.
+    ///
+    /// # Vulnerability
+    /// Missing `extend_ttl` on both storage writes. Impact: funds become permanently inaccessible.
     pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
         from.require_auth();
 
@@ -77,10 +87,7 @@ impl VulnerableToken {
 mod tests {
     use super::*;
     use soroban_sdk::{
-        testutils::{
-            storage::Persistent as _,
-            Address as _, Ledger as _,
-        },
+        testutils::{storage::Persistent as _, Address as _, Ledger as _},
         Address, Env,
     };
 

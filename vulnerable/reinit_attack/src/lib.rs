@@ -43,8 +43,7 @@ impl VaultContract {
             .set(&DataKey::Treasury, &initial_balance);
     }
 
-    /// Only the admin may withdraw — but if the admin was overwritten, the
-    /// attacker controls this gate.
+    /// Withdraw `amount` from the treasury. Only the stored admin may call this.
     pub fn withdraw(env: Env, amount: i128) {
         let admin: Address = env
             .storage()
@@ -64,6 +63,7 @@ impl VaultContract {
             .set(&DataKey::Treasury, &new_balance);
     }
 
+    /// Returns the current admin address. Panics if not initialized.
     pub fn get_admin(env: Env) -> Address {
         env.storage()
             .persistent()
@@ -71,6 +71,7 @@ impl VaultContract {
             .expect("not initialized")
     }
 
+    /// Returns the current treasury balance, defaulting to 0.
     pub fn get_balance(env: Env) -> i128 {
         env.storage()
             .persistent()
@@ -82,7 +83,7 @@ impl VaultContract {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::Address as _, Address, Env};
+    use soroban_sdk::{testutils::Address as _, Address, Env, IntoVal};
 
     #[test]
     fn test_initialize_sets_admin() {

@@ -51,12 +51,12 @@ pub(crate) fn apply_swap(env: &Env, amount_in: i128, amount_out: i128) {
         .storage()
         .persistent()
         .get(&DataKey::ReserveA)
-        .unwrap();
+        .expect("reserve A not initialized");
     let reserve_out: i128 = env
         .storage()
         .persistent()
         .get(&DataKey::ReserveB)
-        .unwrap();
+        .expect("reserve B not initialized");
     env.storage()
         .persistent()
         .set(&DataKey::ReserveA, &(reserve_in + amount_in));
@@ -72,7 +72,7 @@ pub struct VulnerableAmm;
 
 #[contractimpl]
 impl VulnerableAmm {
-    /// Seed the pool with initial reserves.
+    /// Seed the pool with initial reserves for token A and token B.
     pub fn init(env: Env, reserve_a: i128, reserve_b: i128) {
         env.storage()
             .persistent()
@@ -95,6 +95,7 @@ impl VulnerableAmm {
         amount_out
     }
 
+    /// Returns the current reserve of token A.
     pub fn reserve_a(env: Env) -> i128 {
         env.storage()
             .persistent()
@@ -102,6 +103,7 @@ impl VulnerableAmm {
             .unwrap_or(0)
     }
 
+    /// Returns the current reserve of token B.
     pub fn reserve_b(env: Env) -> i128 {
         env.storage()
             .persistent()

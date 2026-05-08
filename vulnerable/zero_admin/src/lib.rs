@@ -9,7 +9,9 @@
 //! forever — no one can ever satisfy `require_auth` for that address.
 
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, String};
+
+const ZERO_ADDR: &str = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
 
 #[contracttype]
 pub enum DataKey {
@@ -22,38 +24,40 @@ pub struct ZeroAdminContract;
 
 #[contractimpl]
 impl ZeroAdminContract {
-    /// VULNERABLE: accepts any address, including the zero/default address.
+    /// Fix: reject the zero address when setting the admin.
     pub fn initialize(env: Env, admin: Address) {
         if env.storage().persistent().has(&DataKey::Admin) {
             panic!("already initialized");
         }
-        // ❌ Missing: assert admin != zero/default address
+        let zero_admin = Address::from_string(&String::from_str(&env, ZERO_ADDR));
+        if admin == zero_admin {
+            panic!("admin must not be zero address");
+        }
         env.storage().persistent().set(&DataKey::Admin, &admin);
     }
 
-    /// Admin-gated function — permanently inaccessible if admin is zero.
+    /// Admin-gated function — valid non-zero admin can still use this.
     pub fn set_value(env: Env, value: i128) {
-        let admin: Address = env.storage().persistent().get(&DataKey::Admin).unwrap();
+        let admin: Address = env.storage().persistent().get(&DataKey::Admin).expect("admin not initialized");
         admin.require_auth();
         env.storage().persistent().set(&DataKey::Value, &value);
     }
 
+    /// Returns the stored config value, defaulting to 0.
     pub fn get_value(env: Env) -> i128 {
         env.storage().persistent().get(&DataKey::Value).unwrap_or(0)
     }
 
+    /// Returns the stored admin address. Panics if not yet initialized.
     pub fn get_admin(env: Env) -> Address {
-        env.storage().persistent().get(&DataKey::Admin).unwrap()
+        env.storage().persistent().get(&DataKey::Admin).expect("admin not initialized")
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::Address as _, Address, Env, String};
-
-    // Stellar's "zero" account — all-zero public key, encodes to this strkey.
-    const ZERO_ADDR: &str = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+    use soroban_sdk::{testutils::Address as _, Address, Env};
 
     fn setup() -> (Env, ZeroAdminContractClient<'static>) {
         let env = Env::default();
@@ -71,24 +75,25 @@ mod tests {
         assert_eq!(client.get_admin(), admin);
     }
 
-    /// Demonstrates the vulnerability: the zero address is silently accepted.
+    /// Reject the zero address as admin during initialization.
     #[test]
-    fn test_zero_address_accepted_as_admin() {
+    #[should_panic(expected = "admin must not be zero address")]
+    fn test_zero_address_admin_panics() {
         let (env, client) = setup();
         let zero = Address::from_string(&String::from_str(&env, ZERO_ADDR));
         client.initialize(&zero);
-        assert_eq!(client.get_admin(), zero);
     }
 
-    /// Demonstrates the consequence: admin functions are permanently inaccessible
-    /// because no real signer can provide auth for the zero address.
+    /// A valid non-zero admin can still authenticate and use admin functions.
     #[test]
-    #[should_panic]
-    fn test_admin_functions_permanently_inaccessible() {
+    fn test_valid_admin_can_set_value() {
         let (env, client) = setup();
-        let zero = Address::from_string(&String::from_str(&env, ZERO_ADDR));
-        client.initialize(&zero);
-        // No auth can be provided for the zero address — panics.
+        let admin = Address::generate(&env);
+
+        client.initialize(&admin);
+        env.mock_all_auths();
         client.set_value(&42);
+
+        assert_eq!(client.get_value(), 42);
     }
 }

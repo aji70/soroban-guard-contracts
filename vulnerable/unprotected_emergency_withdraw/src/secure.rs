@@ -45,7 +45,7 @@ impl SecureTimeLockVault {
 
     /// SECURE: only the stored admin may call this.
     pub fn emergency_withdraw(env: Env, user: Address) {
-        let admin: Address = env.storage().persistent().get(&DataKey::Admin).unwrap();
+        let admin: Address = env.storage().persistent().get(&DataKey::Admin).expect("admin not initialized");
         admin.require_auth(); // ✅ enforces admin-only access
         set_balance(&env, &user, 0);
         env.storage()
@@ -58,6 +58,6 @@ impl SecureTimeLockVault {
     }
 
     pub fn get_admin(env: Env) -> Address {
-        env.storage().persistent().get(&DataKey::Admin).unwrap()
+        env.storage().persistent().get(&DataKey::Admin).expect("admin not initialized")
     }
 }

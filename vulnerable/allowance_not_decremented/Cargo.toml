@@ -2,6 +2,9 @@
 name = "allowance-not-decremented"
 version = "0.1.0"
 edition = "2021"
+description = "Vulnerable Soroban token contract where allowance is never decremented after transfer"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
 
 [lib]
 crate-type = ["cdylib"]

@@ -23,14 +23,14 @@ pub struct DataRegistry;
 
 #[contractimpl]
 impl DataRegistry {
-    /// Store an entry for `account`. Intentionally also missing auth to allow
-    /// setup in tests without mock auth overhead.
+    /// Store a string value for `account`. No auth check — intentionally unprotected for test setup.
     pub fn set_entry(env: Env, account: Address, value: String) {
         env.storage()
             .persistent()
             .set(&DataKey::Entry(account), &value);
     }
 
+    /// Returns the stored entry for `account`, or `None` if absent.
     pub fn get_entry(env: Env, account: Address) -> Option<String> {
         env.storage().persistent().get(&DataKey::Entry(account))
     }
@@ -39,9 +39,7 @@ impl DataRegistry {
     /// any address and delete that account's data without owning it.
     pub fn delete_entry(env: Env, account: Address) {
         // ❌ Missing: account.require_auth();
-        env.storage()
-            .persistent()
-            .remove(&DataKey::Entry(account));
+        env.storage().persistent().remove(&DataKey::Entry(account));
     }
 }
 

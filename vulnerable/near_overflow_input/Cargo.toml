@@ -1,0 +1,15 @@
+[package]
+name = "near-overflow-input"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract demonstrating near-overflow attack via uncapped input amounts"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]

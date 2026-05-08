@@ -47,9 +47,6 @@ impl SecureOracle {
         if env.ledger().sequence() <= updated_at + delay {
             panic!("price not yet valid");
         }
-        env.storage()
-            .persistent()
-            .get(&DataKey::Price)
-            .unwrap_or(0)
+        env.storage().persistent().get(&DataKey::Price).unwrap_or(0)
     }
 }

@@ -55,7 +55,8 @@ impl VulnerableStaking {
         );
     }
 
-    /// Returns elapsed seconds * amount as a simple reward proxy.
+    /// Returns the elapsed-time reward for `staker` (amount × elapsed seconds).
+    /// Returns 0 if no stake exists.
     pub fn claim_rewards(env: Env, staker: Address) -> i128 {
         let info: StakeInfo = env
             .storage()
@@ -66,6 +67,11 @@ impl VulnerableStaking {
         info.amount * elapsed
     }
 
+    /// Returns `true` if a stake entry exists for `staker`, regardless of amount.
+    ///
+    /// # Vulnerability
+    /// Because zero-amount stakes are accepted, this can return `true` for accounts
+    /// that contributed nothing — enabling ghost staker exploitation in governance or airdrops.
     pub fn is_staker(env: Env, staker: Address) -> bool {
         env.storage()
             .persistent()

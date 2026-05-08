@@ -1,0 +1,15 @@
+[package]
+name = "secure-vesting"
+version = "0.1.0"
+edition = "2021"
+description = "Secure Soroban vesting contract with cliff, linear vesting, and admin revoke"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]

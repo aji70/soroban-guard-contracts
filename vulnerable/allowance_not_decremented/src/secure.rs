@@ -3,8 +3,8 @@
 //! Identical API to VulnerableToken but `transfer_from` decrements the
 //! spender's allowance by `amount` before executing the transfer.
 
+use super::{do_transfer, get_allowance, get_balance, set_allowance, set_balance};
 use soroban_sdk::{contract, contractimpl, Address, Env};
-use super::{get_balance, set_balance, get_allowance, set_allowance, do_transfer};
 
 #[contract]
 pub struct SecureToken;

@@ -27,18 +27,23 @@ pub struct TimeLockedVault;
 
 #[contractimpl]
 impl TimeLockedVault {
-    /// Deposit funds and set an unlock timestamp (seconds since Unix epoch).
+    /// Deposit `amount` and set an unlock timestamp (seconds since Unix epoch).
+    /// Requires user auth.
     pub fn deposit(env: Env, user: Address, amount: i128, unlock_timestamp: u64) {
         user.require_auth();
 
         // Store the balance
         let balance_key = DataKey::Balance(user.clone());
         let current_balance: i128 = env.storage().persistent().get(&balance_key).unwrap_or(0);
-        env.storage().persistent().set(&balance_key, &(current_balance + amount));
+        env.storage()
+            .persistent()
+            .set(&balance_key, &(current_balance + amount));
 
         // Set the unlock time
         let unlock_key = DataKey::UnlockTime(user);
-        env.storage().persistent().set(&unlock_key, &unlock_timestamp);
+        env.storage()
+            .persistent()
+            .set(&unlock_key, &unlock_timestamp);
     }
 
     /// Withdraw funds after the lock period expires.
@@ -47,7 +52,7 @@ impl TimeLockedVault {
         user.require_auth();
 
         let unlock_key = DataKey::UnlockTime(user.clone());
-        let unlock_time: u64 = env.storage().persistent().get(&unlock_key).unwrap();
+        let unlock_time: u64 = env.storage().persistent().get(&unlock_key).expect("unlock time not set");
 
         // ❌ VULNERABLE: Timestamp can be manipulated within validator drift window
         // Validators can adjust timestamps by several seconds, allowing premature withdrawal
@@ -57,13 +62,14 @@ impl TimeLockedVault {
 
         // Release all funds
         let balance_key = DataKey::Balance(user.clone());
-        let balance: i128 = env.storage().persistent().get(&balance_key).unwrap_or(0);
+        let _balance: i128 = env.storage().persistent().get(&balance_key).unwrap_or(0);
 
         // Reset balance and unlock time
         env.storage().persistent().set(&balance_key, &0i128);
         env.storage().persistent().remove(&unlock_key);
     }
 
+    /// Returns the balance of `user`, defaulting to 0.
     pub fn balance(env: Env, user: Address) -> i128 {
         env.storage()
             .persistent()
@@ -71,12 +77,12 @@ impl TimeLockedVault {
             .unwrap_or(0)
     }
 
+    /// Returns the unlock timestamp for `user`, or `None` if no lock exists.
     pub fn unlock_time(env: Env, user: Address) -> Option<u64> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::UnlockTime(user))
+        env.storage().persistent().get(&DataKey::UnlockTime(user))
     }
 
+    /// Returns the current ledger timestamp in seconds since Unix epoch.
     pub fn current_timestamp(env: Env) -> u64 {
         env.ledger().timestamp()
     }
@@ -85,7 +91,7 @@ impl TimeLockedVault {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::Ledger as _, Address, Env};
+    use soroban_sdk::{testutils::Address as _, testutils::Ledger as _, Address, Env};
 
     #[test]
     fn test_deposit_and_balance() {
@@ -148,7 +154,8 @@ mod tests {
     }
 
     /// Demonstrates timestamp drift vulnerability.
-    /// An attacker can manipulate the timestamp within the validator drift window.
+    /// A validator can manipulate the timestamp to be at or past the unlock time
+    /// slightly earlier than the real wall-clock time, enabling premature withdrawal.
     #[test]
     fn test_timestamp_drift_attack() {
         let env = Env::default();
@@ -156,18 +163,18 @@ mod tests {
         let client = TimeLockedVaultClient::new(&env, &contract_id);
 
         let alice = Address::generate(&env);
-        let unlock_time = 1000000; // Intended unlock time
+        let unlock_time = 1000000u64;
 
         env.mock_all_auths();
         client.deposit(&alice, &1000, &unlock_time);
 
-        // ATTACK: Validator manipulates timestamp within drift window
-        // (typically 5-15 seconds before actual time)
-        let manipulated_timestamp = unlock_time - 10; // 10 seconds early
-        env.ledger().set_timestamp(manipulated_timestamp);
+        // ATTACK: Validator sets the block timestamp to exactly unlock_time,
+        // which is within the drift window (typically ±15 s of real time).
+        // The contract accepts it because timestamp >= unlock_time.
+        env.ledger().set_timestamp(unlock_time);
 
-        // ❌ VULNERABLE: Withdrawal succeeds despite being before intended lock period
-        // In a real attack, the validator would accept this transaction
+        // ❌ VULNERABLE: withdrawal succeeds even though real wall-clock time
+        // may still be before the intended lock expiry.
         client.withdraw(&alice);
 
         assert_eq!(client.balance(&alice), 0);

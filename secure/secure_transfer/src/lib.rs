@@ -34,7 +34,7 @@ pub struct SecureToken;
 impl SecureToken {
     pub fn mint(env: Env, to: Address, amount: i128) {
         let current = get_balance(&env, &to);
-        set_balance(&env, &to, current.checked_add(amount).unwrap());
+        set_balance(&env, &to, current.checked_add(amount).expect("mint overflow"));
     }
 
     pub fn balance(env: Env, account: Address) -> i128 {
@@ -47,8 +47,8 @@ impl SecureToken {
         from.require_auth();
         let from_balance = get_balance(&env, &from);
         let to_balance = get_balance(&env, &to);
-        set_balance(&env, &from, from_balance.checked_sub(amount).unwrap());
-        set_balance(&env, &to, to_balance.checked_add(amount).unwrap());
+        set_balance(&env, &from, from_balance.checked_sub(amount).expect("transfer underflow"));
+        set_balance(&env, &to, to_balance.checked_add(amount).expect("transfer overflow"));
     }
 }
 

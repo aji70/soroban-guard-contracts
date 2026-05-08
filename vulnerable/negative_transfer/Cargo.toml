@@ -2,6 +2,9 @@
 name = "negative-transfer"
 version = "0.1.0"
 edition = "2021"
+description = "Vulnerable Soroban contract demonstrating negative transfer amount exploit"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
 
 [lib]
 crate-type = ["cdylib"]

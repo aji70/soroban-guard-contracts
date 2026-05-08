@@ -66,17 +66,23 @@ pub struct VulnerableToken;
 
 #[contractimpl]
 impl VulnerableToken {
+    /// Mint `amount` tokens to `to`. No auth check — for test setup.
     pub fn mint(env: Env, to: Address, amount: i128) {
         let current = get_balance(&env, &to);
         set_balance(&env, &to, current + amount);
     }
 
+    /// Approve `spender` to transfer up to `amount` tokens from `owner`. Requires owner auth.
     pub fn approve(env: Env, owner: Address, spender: Address, amount: i128) {
         owner.require_auth();
         set_allowance(&env, &owner, &spender, amount);
     }
 
-    /// ❌ Checks allowance but never decrements it — spender can reuse it.
+    /// VULNERABLE: checks the allowance but never decrements it after use.
+    /// A spender can reuse the same approval indefinitely to drain the owner.
+    ///
+    /// # Vulnerability
+    /// Missing `set_allowance` decrement. Impact: single approval enables unlimited transfers.
     pub fn transfer_from(env: Env, spender: Address, from: Address, to: Address, amount: i128) {
         spender.require_auth();
         let allowance = get_allowance(&env, &from, &spender);
@@ -85,10 +91,12 @@ impl VulnerableToken {
         do_transfer(&env, &from, &to, amount);
     }
 
+    /// Returns the balance of `account`, defaulting to 0.
     pub fn balance(env: Env, account: Address) -> i128 {
         get_balance(&env, &account)
     }
 
+    /// Returns the current allowance granted by `owner` to `spender`, defaulting to 0.
     pub fn allowance(env: Env, owner: Address, spender: Address) -> i128 {
         get_allowance(&env, &owner, &spender)
     }
@@ -101,7 +109,13 @@ mod tests {
     use super::*;
     use soroban_sdk::{testutils::Address as _, Address, Env};
 
-    fn setup() -> (Env, VulnerableTokenClient<'static>, Address, Address, Address) {
+    fn setup() -> (
+        Env,
+        VulnerableTokenClient<'static>,
+        Address,
+        Address,
+        Address,
+    ) {
         let env = Env::default();
         env.mock_all_auths();
         let id = env.register_contract(None, VulnerableToken);

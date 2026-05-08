@@ -26,6 +26,7 @@ pub struct VulnerableEscrow;
 
 #[contractimpl]
 impl VulnerableEscrow {
+    /// Initialise the escrow with an admin. Guards against re-init.
     pub fn initialize(env: Env, admin: Address) {
         if env.storage().persistent().has(&DataKey::Admin) {
             panic!("already initialized");
@@ -33,6 +34,7 @@ impl VulnerableEscrow {
         env.storage().persistent().set(&DataKey::Admin, &admin);
     }
 
+    /// Deposit `amount` into the escrow for `user`. Requires user auth.
     pub fn deposit(env: Env, user: Address, amount: i128) {
         user.require_auth();
         let key = DataKey::Balance(user.clone());
@@ -40,6 +42,7 @@ impl VulnerableEscrow {
         env.storage().persistent().set(&key, &(current + amount));
     }
 
+    /// Withdraw `amount` from the escrow for `user`. Requires user auth.
     pub fn withdraw(env: Env, user: Address, amount: i128) {
         user.require_auth();
         let key = DataKey::Balance(user.clone());
@@ -50,6 +53,9 @@ impl VulnerableEscrow {
 
     /// VULNERABLE: only admin auth is checked — the user whose funds are
     /// being moved has no say. Admin can drain any account at will.
+    ///
+    /// # Vulnerability
+    /// Missing `user.require_auth()`. Impact: admin can rug-pull any depositor unilaterally.
     pub fn admin_withdraw(env: Env, user: Address, recipient: Address, amount: i128) {
         let admin: Address = env
             .storage()
@@ -66,16 +72,13 @@ impl VulnerableEscrow {
         env.storage().persistent().set(&key, &new_balance);
 
         let recipient_key = DataKey::Balance(recipient.clone());
-        let recipient_bal: i128 = env
-            .storage()
-            .persistent()
-            .get(&recipient_key)
-            .unwrap_or(0);
+        let recipient_bal: i128 = env.storage().persistent().get(&recipient_key).unwrap_or(0);
         env.storage()
             .persistent()
             .set(&recipient_key, &(recipient_bal + amount));
     }
 
+    /// Returns the balance of `user`, defaulting to 0.
     pub fn get_balance(env: Env, user: Address) -> i128 {
         env.storage()
             .persistent()

@@ -37,8 +37,11 @@ pub struct DustGriefingVault;
 
 #[contractimpl]
 impl DustGriefingVault {
-    /// VULNERABLE: accepts any amount including dust (e.g. 1 unit).
-    /// Missing: assert!(amount >= MIN_DEPOSIT, "below minimum");
+    /// VULNERABLE: accepts any positive `amount` including dust (e.g. 1 unit).
+    /// Creates a storage entry for every depositor regardless of amount, enabling griefing.
+    ///
+    /// # Vulnerability
+    /// Missing `assert!(amount >= MIN_DEPOSIT)`. Impact: ledger bloat via mass dust deposits.
     pub fn deposit(env: Env, user: Address, amount: i128) {
         user.require_auth();
         // ❌ Missing: assert!(amount >= MIN_DEPOSIT);
@@ -46,6 +49,7 @@ impl DustGriefingVault {
         set_balance(&env, &user, bal + amount);
     }
 
+    /// Returns the balance of `user`, defaulting to 0.
     pub fn balance(env: Env, user: Address) -> i128 {
         get_balance(&env, &user)
     }
@@ -54,8 +58,8 @@ impl DustGriefingVault {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::Address as _, Address, Env};
     use secure::SecureVaultClient;
+    use soroban_sdk::{testutils::Address as _, Address, Env};
 
     fn setup() -> (Env, Address) {
         let env = Env::default();

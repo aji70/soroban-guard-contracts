@@ -2,6 +2,9 @@
 name = "unprotected_burn"
 version = "0.1.0"
 edition = "2021"
+description = "Vulnerable Soroban contract allowing anyone to burn tokens"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
 publish = false
 
 [lib]

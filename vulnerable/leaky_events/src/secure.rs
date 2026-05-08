@@ -4,8 +4,8 @@
 //! `(from, to, amount)` — the transfer amount is public by necessity,
 //! but post-transfer balances are never published.
 
-use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env};
 use super::{get_balance, set_balance};
+use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env};
 
 #[contract]
 pub struct SecureToken;
@@ -68,8 +68,8 @@ mod tests {
         assert_eq!(events.len(), 1, "expected exactly one transfer event");
 
         let event_data: Val = events.last().unwrap().2;
-        let tuple = Vec::<Val>::try_from_val(&env, &event_data)
-            .expect("event data should be a tuple/vec");
+        let tuple =
+            Vec::<Val>::try_from_val(&env, &event_data).expect("event data should be a tuple/vec");
 
         // ✅ Only 3 fields: (from, to, amount) — no balance data.
         assert_eq!(tuple.len(), 3, "event must contain only (from, to, amount)");

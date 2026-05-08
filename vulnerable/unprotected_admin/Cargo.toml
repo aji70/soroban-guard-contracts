@@ -2,6 +2,9 @@
 name = "unprotected-admin"
 version = "0.1.0"
 edition = "2021"
+description = "Vulnerable Soroban escrow contract with open set_admin and upgrade functions"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
 
 [lib]
 crate-type = ["cdylib"]
