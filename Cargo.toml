@@ -76,10 +76,10 @@ members = [
     "vulnerable/expired_delegation",
     "vulnerable/uncapped_supply",
     "vulnerable/silent_admin_change",
-    "vulnerable/unchecked_fee_collector",
-    "vulnerable/untrusted_oracle_setter",
-    "vulnerable/zero_share_rounding",
-    "vulnerable/withdraw_rounding_leak",
+    "vulnerable/oracle_price_scale_mismatch",
+    "vulnerable/mixed_collateral_decimals",
+    "vulnerable/signed_unsigned_wrap",
+    "vulnerable/abs_min_overflow",
 ]
 
 [workspace.dependencies]
