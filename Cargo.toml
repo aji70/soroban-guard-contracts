@@ -83,6 +83,7 @@ members = [
     "vulnerable/abs_min_overflow",
     "vulnerable/flash_repay_wrong_token",
     "vulnerable/airdrop_claim_before_start",
+    "vulnerable/vesting_cliff_after_end",
 ]
 
 [workspace.dependencies]
