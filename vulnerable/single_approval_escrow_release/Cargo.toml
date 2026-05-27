@@ -1,0 +1,13 @@
+[package]
+name = "single-approval-escrow-release"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract demonstrating escrow release with only one party approval"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
