@@ -88,6 +88,7 @@ members = [
     "vulnerable/abs_min_overflow",
     "vulnerable/negative_oracle_price",
     "vulnerable/borrow_without_accrual",
+    "vulnerable/interest_index_reset",
 ]
 
 [workspace.dependencies]
