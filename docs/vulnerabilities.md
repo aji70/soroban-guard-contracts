@@ -1416,6 +1416,51 @@ unbiased randomness with an on-chain verifiable proof.
 
 ---
 
+## 34. Stale Pending Admin (`stale_pending_admin`)
+
+**Contract:** `vulnerable/stale_pending_admin` → `vulnerable/stale_pending_admin/src/secure.rs`
+**Severity:** High
+
+### What it is
+
+A two-step admin transfer contract where `cancel_admin_transfer()` emits an event
+but never removes the `PendingAdmin` from persistent storage. The previously
+proposed address can still call `accept_admin()` and take over ownership even
+after cancellation.
+
+### Vulnerable pattern
+
+```rust
+pub fn cancel_admin_transfer(env: Env) {
+    let current: Address = env.storage().persistent().get(&DataKey::Admin).expect("not initialized");
+    current.require_auth();
+    // ❌ Missing: env.storage().persistent().remove(&DataKey::PendingAdmin);
+    env.events().publish((symbol_short!("cancel"),), (current,));
+}
+```
+
+### Secure fix
+
+```rust
+pub fn cancel_admin_transfer(env: Env) {
+    let current: Address = env.storage().persistent().get(&SecureDataKey::Admin).expect("not initialized");
+    current.require_auth();
+    // ✅ Actually remove the pending admin — cancellation is real.
+    env.storage().persistent().remove(&SecureDataKey::PendingAdmin);
+    env.events().publish((symbol_short!("cancel"),), (current,));
+}
+```
+
+Additionally, the secure version uses a transfer nonce so that each proposal
+creates a unique acceptance window, preventing replay of stale proposals.
+
+### Impact
+
+Privilege escalation: a cancelled pending admin can unexpectedly take over the
+contract, gaining access to all admin-gated functions.
+
+---
+
 ## General Soroban Security Checklist
 
 | Check | Description |
