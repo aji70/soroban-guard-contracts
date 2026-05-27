@@ -87,6 +87,7 @@ members = [
     "vulnerable/signed_unsigned_wrap",
     "vulnerable/abs_min_overflow",
     "vulnerable/negative_oracle_price",
+    "vulnerable/batch_partial_failure",
 ]
 
 [workspace.dependencies]
