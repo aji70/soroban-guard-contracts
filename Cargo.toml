@@ -4,6 +4,7 @@ members = [
     "vulnerable/admin_rugpull",
     "vulnerable/allowance_not_decremented",
     "vulnerable/call_depth",
+    "vulnerable/delegate_signer_mismatch",
     "vulnerable/div_by_zero",
     "vulnerable/double_claim",
     "vulnerable/dust_griefing",
@@ -24,6 +25,7 @@ members = [
     "vulnerable/near_overflow_input",
     "vulnerable/no_slippage",
     "vulnerable/no_min_stake",
+    "vulnerable/operator_role_not_enforced",
     "vulnerable/reentrancy",
     "vulnerable/reinit_attack",
     "vulnerable/scanner_impersonation",
@@ -40,6 +42,7 @@ members = [
     "vulnerable/fee_on_transfer",
     "vulnerable/instant_oracle",
     "vulnerable/stale_oracle",
+    "vulnerable/future_oracle_timestamp",
     "vulnerable/unprotected_admin",
     "vulnerable/unprotected_upgrade",
     "vulnerable/unprotected_burn",
@@ -49,6 +52,7 @@ members = [
     "vulnerable/unsafe_storage",
     "vulnerable/unbounded_storage",
     "vulnerable/zero_deposit",
+    "vulnerable/rebasing_token_accounting",
     "vulnerable/zero_wasm_hash",
     "vulnerable/reentrancy",
     "vulnerable/replay_attack",
@@ -58,6 +62,7 @@ members = [
     "vulnerable/div_by_zero",
     "vulnerable/flash_loan_no_check",
     "vulnerable/allowance_not_decremented",
+    "vulnerable/permit_domain_missing",
     "vulnerable/leaky_events",
     "vulnerable/no_slippage",
     "vulnerable/unsafe_cast",
@@ -80,7 +85,7 @@ members = [
     "vulnerable/mixed_collateral_decimals",
     "vulnerable/signed_unsigned_wrap",
     "vulnerable/abs_min_overflow",
-    "vulnerable/unwrap_without_burn",
+    "vulnerable/negative_oracle_price",
 ]
 
 [workspace.dependencies]
