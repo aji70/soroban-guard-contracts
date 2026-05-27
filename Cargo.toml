@@ -87,6 +87,10 @@ members = [
     "vulnerable/signed_unsigned_wrap",
     "vulnerable/abs_min_overflow",
     "vulnerable/negative_oracle_price",
+    "vulnerable/auction_close_early",
+    "vulnerable/auction_min_increment_missing",
+    "vulnerable/single_approval_escrow_release",
+    "vulnerable/auction_refund_block",
 ]
 
 [workspace.dependencies]
