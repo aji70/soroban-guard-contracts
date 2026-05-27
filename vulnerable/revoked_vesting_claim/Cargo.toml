@@ -1,0 +1,15 @@
+[workspace]
+
+[package]
+name = "revoked-vesting-claim"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban vesting contract that allows claims after revocation"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { version = "21.0.0", features = ["testutils"] }
