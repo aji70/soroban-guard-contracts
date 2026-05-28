@@ -1,0 +1,13 @@
+[package]
+name = "deposit-cap-wrong-amount"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban fixture: deposit cap checked before fee-on-transfer delta"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

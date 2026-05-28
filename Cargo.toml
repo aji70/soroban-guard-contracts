@@ -86,9 +86,14 @@ members = [
     "vulnerable/mixed_collateral_decimals",
     "vulnerable/signed_unsigned_wrap",
     "vulnerable/abs_min_overflow",
+    "vulnerable/public_role_grant",
     "vulnerable/negative_oracle_price",
-    "vulnerable/batch_partial_failure",
+    "vulnerable/partial_config_clear",
+    "vulnerable/sequence_as_timestamp",
+    "vulnerable/balance_key_missing_user",
+    "vulnerable/report_hash_unbound_contract",
 ]
+
 
 [workspace.dependencies]
 soroban-sdk = { version = "21.0.0", features = ["testutils"] }
