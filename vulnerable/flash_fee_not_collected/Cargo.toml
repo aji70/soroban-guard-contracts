@@ -1,0 +1,15 @@
+[workspace]
+
+[package]
+name = "flash-fee-not-collected"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban flash loan that calculates but never collects fees"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { version = "21.0.0", features = ["testutils"] }
