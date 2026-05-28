@@ -1416,6 +1416,94 @@ unbiased randomness with an on-chain verifiable proof.
 
 ---
 
+## 34. Stale Pending Admin (`stale_pending_admin`)
+
+**Contract:** `vulnerable/stale_pending_admin` → `vulnerable/stale_pending_admin/src/secure.rs`
+**Severity:** High
+
+### What it is
+
+A two-step admin transfer contract where `cancel_admin_transfer()` emits an event
+but never removes the `PendingAdmin` from persistent storage. The previously
+proposed address can still call `accept_admin()` and take over ownership even
+after cancellation.
+
+### Vulnerable pattern
+
+```rust
+pub fn cancel_admin_transfer(env: Env) {
+    let current: Address = env.storage().persistent().get(&DataKey::Admin).expect("not initialized");
+    current.require_auth();
+    // ❌ Missing: env.storage().persistent().remove(&DataKey::PendingAdmin);
+    env.events().publish((symbol_short!("cancel"),), (current,));
+}
+```
+
+### Secure fix
+
+```rust
+pub fn cancel_admin_transfer(env: Env) {
+    let current: Address = env.storage().persistent().get(&SecureDataKey::Admin).expect("not initialized");
+    current.require_auth();
+    // ✅ Actually remove the pending admin — cancellation is real.
+    env.storage().persistent().remove(&SecureDataKey::PendingAdmin);
+    env.events().publish((symbol_short!("cancel"),), (current,));
+}
+```
+
+Additionally, the secure version uses a transfer nonce so that each proposal
+creates a unique acceptance window, preventing replay of stale proposals.
+
+### Impact
+
+Privilege escalation: a cancelled pending admin can unexpectedly take over the
+contract, gaining access to all admin-gated functions.
+
+---
+
+## 35. Missing `accept_admin` Auth (`accept_admin_missing_auth`)
+
+**Contract:** `vulnerable/accept_admin_missing_auth` → `vulnerable/accept_admin_missing_auth/src/secure.rs`
+**Severity:** Critical
+
+### What it is
+
+A two-step admin transfer contract where `accept_admin()` reads the pending
+admin from storage and promotes them — but **never calls `require_auth()`**.
+Any address can finalise the transfer without the pending admin's knowledge
+or consent, enabling an attacker to seize admin privileges.
+
+### Vulnerable pattern
+
+```rust
+pub fn accept_admin(env: Env) {
+    let pending: Address = env.storage().persistent().get(&DataKey::PendingAdmin).expect("no pending admin");
+    // ❌ Missing: pending.require_auth();
+    env.storage().persistent().set(&DataKey::Admin, &pending);
+    env.storage().persistent().remove(&DataKey::PendingAdmin);
+}
+```
+
+### Secure fix
+
+```rust
+pub fn accept_admin(env: Env) {
+    let pending: Address = env.storage().persistent().get(&SecureDataKey::PendingAdmin).expect("no pending admin");
+    // ✅ Require the pending admin to sign before promoting them.
+    pending.require_auth();
+    env.storage().persistent().set(&SecureDataKey::Admin, &pending);
+    env.storage().persistent().remove(&SecureDataKey::PendingAdmin);
+}
+```
+
+### Impact
+
+Privilege escalation: a random caller can finalise a pending admin transfer
+without the pending address's authorisation, gaining full admin control over
+the contract.
+
+---
+
 ## General Soroban Security Checklist
 
 | Check | Description |

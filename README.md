@@ -48,6 +48,7 @@ soroban-guard-contracts/
 
 | Crate | Context | Vulnerability |
 |---|---|---|
+| [`accept_admin_missing_auth`](./vulnerable/accept_admin_missing_auth/README.md) | Admin contract | `accept_admin()` never calls `require_auth` — anyone can finalise the transfer |
 | [`missing_auth`](./vulnerable/missing_auth/README.md) | Token contract | `transfer()` mutates balances without `require_auth()` |
 | [`missing_ttl`](./vulnerable/missing_ttl/README.md) | Token contract | Persistent balances expire because the contract never calls `extend_ttl()` |
 | [`unchecked_math`](./vulnerable/unchecked_math/README.md) | Staking contract | Reward calc uses raw `*` on `u64` — overflows silently |
@@ -73,6 +74,7 @@ soroban-guard-contracts/
 | [`self_transfer`](./vulnerable/self_transfer/README.md) | Token contract | `from == to` corrupts balance accounting |
 | [`sensitive_storage`](./vulnerable/sensitive_storage/README.md) | Registry contract | Secrets stored in publicly readable contract storage |
 | [`stale_oracle`](./vulnerable/stale_oracle/README.md) | DEX contract | Oracle price used without staleness check |
+| [`stale_pending_admin`](./vulnerable/stale_pending_admin/README.md) | Admin contract | Two-step admin: cancellation does not clear pending admin — stale address can still accept |
 | [`string_admin`](./vulnerable/string_admin/README.md) | Admin contract | Admin stored as `String` — bypasses `require_auth` |
 | [`timestamp_lock`](./vulnerable/timestamp_lock/README.md) | Vault contract | Time-lock uses manipulable `ledger().timestamp()` |
 | [`unbounded_storage`](./vulnerable/unbounded_storage/README.md) | Registry contract | Unbounded collection growth exhausts storage |

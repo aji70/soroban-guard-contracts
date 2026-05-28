@@ -1,0 +1,13 @@
+[package]
+name = "public-archive-restore"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban fixture: restore lifecycle skips admin authorization"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

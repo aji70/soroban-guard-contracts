@@ -1,6 +1,8 @@
 [workspace]
 resolver = "2"
 members = [
+    "vulnerable/abs_min_overflow",
+    "vulnerable/accept_admin_missing_auth",
     "vulnerable/admin_rugpull",
     "vulnerable/allowance_not_decremented",
     "vulnerable/call_depth",
@@ -86,12 +88,14 @@ members = [
     "vulnerable/mixed_collateral_decimals",
     "vulnerable/signed_unsigned_wrap",
     "vulnerable/abs_min_overflow",
+    "vulnerable/public_role_grant",
     "vulnerable/negative_oracle_price",
-    "vulnerable/verifier_threshold_ignored",
-    "vulnerable/audit_expiry_ignored",
-    "vulnerable/buy_without_listing",
-    "vulnerable/listing_price_signature_gap",
+    "vulnerable/partial_config_clear",
+    "vulnerable/sequence_as_timestamp",
+    "vulnerable/balance_key_missing_user",
+    "vulnerable/report_hash_unbound_contract",
 ]
+
 
 [workspace.dependencies]
 soroban-sdk = { version = "21.0.0", features = ["testutils"] }
