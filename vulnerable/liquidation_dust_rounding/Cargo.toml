@@ -1,0 +1,15 @@
+[workspace]
+
+[package]
+name = "liquidation-dust-rounding"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban liquidation that allows dust bad debt through rounding"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { version = "21.0.0", features = ["testutils"] }

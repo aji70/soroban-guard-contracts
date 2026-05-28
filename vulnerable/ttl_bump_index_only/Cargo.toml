@@ -1,0 +1,13 @@
+[package]
+name = "ttl-bump-index-only"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban fixture: TTL refresh updates index but not the paired record"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

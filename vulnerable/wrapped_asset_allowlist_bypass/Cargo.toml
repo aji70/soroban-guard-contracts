@@ -1,0 +1,13 @@
+[package]
+name = "wrapped-asset-allowlist-bypass"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract: token allowlist bypassed via wrapped asset address"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
