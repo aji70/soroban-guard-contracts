@@ -1,0 +1,13 @@
+[package]
+name = "reward-debt-not-updated"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract: claim_rewards never updates reward_debt — same rewards claimable repeatedly"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

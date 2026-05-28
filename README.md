@@ -88,6 +88,8 @@ soroban-guard-contracts/
 | [`zero_admin`](./vulnerable/zero_admin/README.md) | Admin contract | Admin set to zero address — contract permanently locked |
 | [`zero_deposit`](./vulnerable/zero_deposit/README.md) | Vault contract | Zero-value deposit accepted — storage griefing |
 | [`zero_stake`](./vulnerable/zero_stake/README.md) | Staking contract | Zero-value stake accepted — division-by-zero risk |
+| [`reward_debt_not_updated`](./vulnerable/reward_debt_not_updated/README.md) | Staking contract | `claim_rewards` never updates reward debt — same rewards claimable repeatedly |
+| [`reward_checkpoint_missing`](./vulnerable/reward_checkpoint_missing/README.md) | Staking contract | `stake` omits reward checkpoint — late depositors steal historical rewards |
 
 ### Secure
 
@@ -345,6 +347,8 @@ flowchart TD
 | `zero_stake` | Zero-value stake | _(inline `secure.rs`)_ | Guard `amount > 0` |
 | `timestamp_lock` | Timestamp manipulation | `secure/sequence_lock` | Ledger sequence instead of timestamp |
 | `missing_events` | No events emitted | — | Emit structured events |
+| `reward_debt_not_updated` | Reward debt not updated | _(inline `secure.rs`)_ | Update debt after payout |
+| `reward_checkpoint_missing` | Reward checkpoint missing | _(inline `secure.rs`)_ | Snapshot accumulator on deposit |
 
 ### Useful links
 

@@ -1,0 +1,13 @@
+[package]
+name = "flash-repay-wrong-token"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract: flash loan repayment checked against caller-supplied token instead of borrowed asset"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

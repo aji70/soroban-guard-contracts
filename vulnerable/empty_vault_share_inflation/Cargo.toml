@@ -1,0 +1,13 @@
+[package]
+name = "empty-vault-share-inflation"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract demonstrating vault share inflation via first-deposit manipulation"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

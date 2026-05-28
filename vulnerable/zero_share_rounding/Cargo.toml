@@ -1,0 +1,13 @@
+[package]
+name = "zero-share-rounding"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban vault: deposit accepted even when computed shares round to zero"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

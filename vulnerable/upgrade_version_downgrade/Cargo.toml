@@ -1,0 +1,13 @@
+[package]
+name = "upgrade-version-downgrade"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban upgrade contract that accepts lower implementation versions"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

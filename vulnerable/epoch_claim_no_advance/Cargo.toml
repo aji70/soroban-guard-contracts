@@ -1,0 +1,13 @@
+[package]
+name = "epoch_claim_no_advance"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban epoch claim contract without epoch advance verification"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

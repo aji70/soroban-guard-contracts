@@ -1,0 +1,13 @@
+[package]
+name = "merkle_leaf_missing_amount"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract demonstrating merkle leaf missing amount vulnerability"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

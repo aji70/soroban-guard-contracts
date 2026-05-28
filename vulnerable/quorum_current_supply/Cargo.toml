@@ -1,0 +1,13 @@
+[package]
+name = "quorum_current_supply"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban governance contract using current supply instead of snapshot supply for quorum"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

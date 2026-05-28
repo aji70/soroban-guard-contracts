@@ -1,0 +1,13 @@
+[package]
+name = "signed-unsigned-wrap"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract: signed i128 cast to u128 before positivity check — negative inputs become huge values"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

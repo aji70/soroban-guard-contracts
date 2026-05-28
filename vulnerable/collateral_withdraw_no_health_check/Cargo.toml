@@ -1,0 +1,13 @@
+[package]
+name = "collateral-withdraw-no-health-check"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban lending contract that skips post-withdraw health checks"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
