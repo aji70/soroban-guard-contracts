@@ -1,0 +1,15 @@
+[package]
+name = "public_role_grant"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# Keep default empty; other fixtures rely on unit tests.
+default = []
+
