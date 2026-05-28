@@ -1,0 +1,13 @@
+[package]
+name = "balance-key-missing-user"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract demonstrating asset-only balance keys without user scoping"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
