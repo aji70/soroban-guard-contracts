@@ -86,16 +86,14 @@ members = [
     "vulnerable/mixed_collateral_decimals",
     "vulnerable/signed_unsigned_wrap",
     "vulnerable/abs_min_overflow",
+    "vulnerable/public_role_grant",
     "vulnerable/negative_oracle_price",
-    "vulnerable/auction_close_early",
-    "vulnerable/auction_min_increment_missing",
-    "vulnerable/single_approval_escrow_release",
-    "vulnerable/auction_refund_block",
-    "vulnerable/bridge_chainid_missing",
-    "vulnerable/bridge_nonce_global",
-    "vulnerable/bridge_validator_quorum_missing",
-    "vulnerable/royalty_discount_miscalc",
+    "vulnerable/partial_config_clear",
+    "vulnerable/sequence_as_timestamp",
+    "vulnerable/balance_key_missing_user",
+    "vulnerable/report_hash_unbound_contract",
 ]
+
 
 [workspace.dependencies]
 soroban-sdk = { version = "21.0.0", features = ["testutils"] }
