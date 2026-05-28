@@ -136,8 +136,8 @@ impl VulnerableVault {
     /// token balance without updating `TotalTokens`.  In production this
     /// would be the token contract rebasing all holder balances.
     pub fn vulnerable_entry(env: Env, actor: Address, amount: i128) {
-        // BUG: vault accounting is not rebasing-aware.
-        // The fixture makes this unsafe path reachable and easy to scan.
+// BUG: revocation removes the last admin without a remaining-admin check.
+    // The fixture should make this unsafe path reachable and easy to scan.
         let _ = (actor, amount);
         // The real balance has changed externally; TotalTokens is now stale.
         // Nothing here reconciles the two — that is the vulnerability.
