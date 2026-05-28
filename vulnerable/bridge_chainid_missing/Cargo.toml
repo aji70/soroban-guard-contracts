@@ -1,0 +1,13 @@
+[package]
+name = "bridge-chainid-missing"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract demonstrating bridge message replay across chains due to missing destination chain id"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
