@@ -89,6 +89,7 @@ members = [
     "vulnerable/signed_unsigned_wrap",
     "vulnerable/abs_min_overflow",
     "vulnerable/public_role_grant",
+    "vulnerable/public_proposal_cancel",
     "vulnerable/negative_oracle_price",
     "vulnerable/partial_config_clear",
     "vulnerable/sequence_as_timestamp",
