@@ -73,6 +73,9 @@ members = [
     "secure/secure_vault",
     "secure/secure_escrow",
     "secure/protected_admin",
+    "secure/secure_burn",
+    "secure/secure_token",
+    "vulnerable/caller_supplied_withdraw_token",
     "secure/secure_airdrop",
     "secure/secure_lending",
     "secure/secure_vesting",
@@ -89,12 +92,14 @@ members = [
     "vulnerable/signed_unsigned_wrap",
     "vulnerable/abs_min_overflow",
     "vulnerable/public_role_grant",
+    "vulnerable/public_proposal_cancel",
     "vulnerable/negative_oracle_price",
     "vulnerable/partial_config_clear",
     "vulnerable/sequence_as_timestamp",
     "vulnerable/balance_key_missing_user",
     "vulnerable/report_hash_unbound_contract",
-    "vulnerable/migration_version_skipped",
+    "vulnerable/inactive_circuit_breaker",
+    "vulnerable/twap_window_too_short",
 ]
 
 

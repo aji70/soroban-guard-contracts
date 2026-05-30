@@ -1,0 +1,13 @@
+[package]
+name = "delete-without-tombstone"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract: delete without tombstone allows stale-approval replay"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
