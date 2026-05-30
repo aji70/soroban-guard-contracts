@@ -1,0 +1,13 @@
+[package]
+name = "inactive-circuit-breaker"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract demonstrating an inactive circuit breaker — max price-move threshold stored but never enforced"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

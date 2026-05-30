@@ -1,0 +1,13 @@
+[package]
+name = "caller-supplied-ledger"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract: trusts caller-supplied current_ledger instead of env.ledger()"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
