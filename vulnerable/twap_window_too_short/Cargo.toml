@@ -1,0 +1,13 @@
+[package]
+name = "twap-window-too-short"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract demonstrating a TWAP window that can be set to one ledger, collapsing the average into a spot price"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
