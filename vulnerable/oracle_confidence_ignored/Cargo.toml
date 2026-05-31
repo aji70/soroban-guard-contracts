@@ -1,0 +1,13 @@
+[package]
+name = "oracle-confidence-ignored"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract: oracle confidence interval is discarded — low-confidence prices trigger liquidations as if reliable"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

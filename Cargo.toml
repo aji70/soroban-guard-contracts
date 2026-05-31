@@ -100,6 +100,7 @@ members = [
     "vulnerable/report_hash_unbound_contract",
     "vulnerable/inactive_circuit_breaker",
     "vulnerable/twap_window_too_short",
+    "vulnerable/oracle_confidence_ignored",
 ]
 
 
