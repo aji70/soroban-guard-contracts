@@ -1,0 +1,13 @@
+[package]
+name = "scanner-metadata-unbounded"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract demonstrating unbounded metadata storage in a scanner registry"
+license = "MIT"
+repository = "https://github.com/Mirabliss/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
