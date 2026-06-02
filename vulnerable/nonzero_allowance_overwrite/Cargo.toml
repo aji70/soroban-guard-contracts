@@ -1,0 +1,13 @@
+[package]
+name = "nonzero-allowance-overwrite"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban token contract where approve overwrites nonzero allowance without reset"
+license = "MIT"
+repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }

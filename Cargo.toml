@@ -27,6 +27,7 @@ members = [
     "vulnerable/negative_transfer",
     "vulnerable/near_overflow_input",
     "vulnerable/no_slippage",
+    "vulnerable/nonzero_allowance_overwrite",
     "vulnerable/no_min_stake",
     "vulnerable/operator_role_not_enforced",
     "vulnerable/reentrancy",
@@ -100,7 +101,7 @@ members = [
     "vulnerable/report_hash_unbound_contract",
     "vulnerable/inactive_circuit_breaker",
     "vulnerable/twap_window_too_short",
-    "vulnerable/scanner_metadata_unbounded",
+    "vulnerable/oracle_confidence_ignored",
 ]
 
 
