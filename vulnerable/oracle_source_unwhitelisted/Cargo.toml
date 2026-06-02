@@ -1,0 +1,13 @@
+[package]
+name = "oracle-source-unwhitelisted"
+version = "0.1.0"
+edition = "2021"
+description = "Vulnerable Soroban contract: caller-supplied oracle address is trusted — attacker deploys fake oracle to feed arbitrary prices"
+license = "MIT"
+repository = "https://github.com/Olisachukwuma1/soroban-guard-contracts"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+soroban-sdk = { workspace = true }
