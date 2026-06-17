@@ -1,5 +1,5 @@
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env};
 use super::DataKey;
+use soroban_sdk::{contract, contractimpl, Address, BytesN, Env};
 
 #[contract]
 pub struct SecureUpgrade;

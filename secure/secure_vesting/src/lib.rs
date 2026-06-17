@@ -27,7 +27,9 @@ impl SecureVesting {
     pub fn initialize(env: Env, admin: Address, treasury: Address) {
         admin.require_auth();
         env.storage().persistent().set(&DataKey::Admin, &admin);
-        env.storage().persistent().set(&DataKey::Treasury, &treasury);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Treasury, &treasury);
         env.storage()
             .persistent()
             .set(&DataKey::TreasuryBalance, &0i128);
@@ -110,9 +112,10 @@ impl SecureVesting {
             .persistent()
             .get(&DataKey::TreasuryBalance)
             .unwrap_or(0);
-        env.storage()
-            .persistent()
-            .set(&DataKey::TreasuryBalance, &(current_treasury_balance + unvested));
+        env.storage().persistent().set(
+            &DataKey::TreasuryBalance,
+            &(current_treasury_balance + unvested),
+        );
 
         schedule.revoked_at = Some(now);
         env.storage().persistent().set(&key, &schedule);
@@ -235,9 +238,9 @@ mod tests {
         client.revoke(&beneficiary);
         assert_eq!(client.treasury_balance(), 750);
 
-        let claim_attempt = std::panic::catch_unwind(|| {
+        let claim_attempt = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             client.claim(&beneficiary);
-        });
+        }));
         assert!(claim_attempt.is_err());
     }
 }

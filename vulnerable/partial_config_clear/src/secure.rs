@@ -1,7 +1,7 @@
 //! SECURE: Merge partial configuration updates.
 #![no_std]
-use soroban_sdk::{contract, contractimpl, Address, Env};
 use super::{validate_config, Config, DataKey};
+use soroban_sdk::{contract, contractimpl, Address, Env};
 
 #[contract]
 pub struct SecureContract;

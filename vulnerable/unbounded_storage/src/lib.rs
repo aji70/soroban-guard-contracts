@@ -59,6 +59,7 @@ impl UnboundedStorage {
 
 // ── Secure mirror ─────────────────────────────────────────────────────────────
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure {
     use super::DataKey;
     use soroban_sdk::{contract, contractimpl, Env, String, Vec};

@@ -9,6 +9,9 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
+pub mod secure;
+
 #[contracttype]
 pub enum DataKey {
     Admin,
@@ -70,15 +73,19 @@ mod tests {
         assert_eq!(client.get_admin(), admin);
     }
 
-    /// After the fix, passing the same address must panic.
+    /// The secure mirror rejects a no-op rotation.
     #[test]
     #[should_panic(expected = "new_admin is already admin")]
     fn test_same_admin_panics_after_fix() {
-        let (_env, client, admin) = setup();
+        use secure::SecureAdminContractClient;
 
-        // Documents expected fixed behaviour.
-        // With the current vulnerable code this does NOT panic (bug).
-        // Once the guard is added, this test will pass.
+        let env = Env::default();
+        env.mock_all_auths();
+        let id = env.register_contract(None, secure::SecureAdminContract);
+        let client = SecureAdminContractClient::new(&env, &id);
+        let admin = Address::generate(&env);
+        client.initialize(&admin);
+
         client.set_admin(&admin);
     }
 

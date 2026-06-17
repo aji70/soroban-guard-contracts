@@ -26,8 +26,12 @@ fn normalise(price: i128, exponent: u32) -> i128 {
 #[contractimpl]
 impl SecureLending {
     pub fn set_oracle(env: Env, feed: Symbol, price: i128, exponent: u32) {
-        env.storage().persistent().set(&DataKey::Price(feed.clone()), &price);
-        env.storage().persistent().set(&DataKey::Exponent(feed), &exponent);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Price(feed.clone()), &price);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Exponent(feed), &exponent);
     }
 
     pub fn deposit(env: Env, user: Address, feed: Symbol, amount: i128) {

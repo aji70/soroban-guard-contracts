@@ -64,7 +64,7 @@ mod tests {
         env.mock_all_auths();
         client.deposit(&depositor, &1000);
 
-        env.clear_auths();
+        env.mock_auths(&[]);
         client.withdraw(&depositor, &500);
     }
 }

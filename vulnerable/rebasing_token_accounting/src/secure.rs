@@ -1,5 +1,5 @@
-use soroban_sdk::{contract, contractimpl, Address, Env};
 use super::DataKey;
+use soroban_sdk::{contract, contractimpl, Address, Env};
 
 /// SECURE: Rebasing-Aware Vault
 ///

@@ -20,8 +20,12 @@ fn to_usd(raw_amount: i128, price_usd: i128, decimals: u32) -> i128 {
 #[contractimpl]
 impl SecurePool {
     pub fn register_token(env: Env, token: Symbol, price_usd: i128, decimals: u32) {
-        env.storage().persistent().set(&DataKey::Price(token.clone()), &price_usd);
-        env.storage().persistent().set(&DataKey::Decimals(token), &decimals);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Price(token.clone()), &price_usd);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Decimals(token), &decimals);
     }
 
     pub fn deposit(env: Env, user: Address, token: Symbol, amount: i128) {

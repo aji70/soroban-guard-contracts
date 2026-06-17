@@ -1,7 +1,7 @@
 //! SECURE: Use ledger timestamps for duration-based locks.
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 use super::DataKey;
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
 #[contract]
 pub struct SecureSequenceAsTimestampContract;
@@ -36,8 +36,12 @@ impl SecureSequenceAsTimestampContract {
             panic!("still locked");
         }
 
-        env.storage().persistent().set(&DataKey::Balance(user.clone()), &0i128);
-        env.storage().persistent().remove(&DataKey::UnlockSequence(user));
+        env.storage()
+            .persistent()
+            .set(&DataKey::Balance(user.clone()), &0i128);
+        env.storage()
+            .persistent()
+            .remove(&DataKey::UnlockSequence(user));
     }
 
     pub fn balance(env: Env, user: Address) -> i128 {
@@ -48,6 +52,8 @@ impl SecureSequenceAsTimestampContract {
     }
 
     pub fn unlock_timestamp(env: Env, user: Address) -> Option<u64> {
-        env.storage().persistent().get(&DataKey::UnlockSequence(user))
+        env.storage()
+            .persistent()
+            .get(&DataKey::UnlockSequence(user))
     }
 }

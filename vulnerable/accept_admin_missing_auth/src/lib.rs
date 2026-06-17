@@ -14,6 +14,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 #[contracttype]
@@ -58,8 +59,7 @@ impl VulnerableAdmin {
             .expect("not initialized");
         current.require_auth();
         env.storage().persistent().remove(&DataKey::PendingAdmin);
-        env.events()
-            .publish((symbol_short!("cancel"),), (current,));
+        env.events().publish((symbol_short!("cancel"),), (current,));
     }
 
     /// VULNERABLE: reads `PendingAdmin` and promotes them without requiring
@@ -101,23 +101,23 @@ mod tests {
         Address, Env, IntoVal,
     };
 
-    fn setup_env() -> (Env, Address) {
+    fn setup_env() -> (Env, Address, Address) {
         let env = Env::default();
         let id = env.register_contract(None, VulnerableAdmin);
         let admin = Address::generate(&env);
         // initialize does not call require_auth, so no mock needed.
         VulnerableAdminClient::new(&env, &id).initialize(&admin);
-        (env, id)
+        (env, id, admin)
     }
 
     /// Helper to auth only the current admin for proposals.
-    fn auth_admin(env: &Env, contract_id: &Address, admin: &Address) {
+    fn auth_admin(env: &Env, contract_id: &Address, admin: &Address, new_admin: &Address) {
         env.mock_auths(&[MockAuth {
             address: admin,
             invoke: &MockAuthInvoke {
                 contract: contract_id,
                 fn_name: "propose_admin",
-                args: (Address::generate(env),).into_val(env),
+                args: (new_admin.clone(),).into_val(env),
                 sub_invokes: &[],
             },
         }]);
@@ -127,14 +127,13 @@ mod tests {
     /// and the pending address becomes admin without ever signing.
     #[test]
     fn test_anyone_can_finalise_transfer() {
-        let (env, id) = setup_env();
+        let (env, id, admin) = setup_env();
         let client = VulnerableAdminClient::new(&env, &id);
-        let admin = Address::generate(&env);
         let pending = Address::generate(&env);
         let random_caller = Address::generate(&env);
 
         // Admin proposes a new pending admin.
-        auth_admin(&env, &id, &admin);
+        auth_admin(&env, &id, &admin, &pending);
         client.propose_admin(&pending);
         assert_eq!(client.get_pending_admin(), Some(pending.clone()));
 
@@ -155,7 +154,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "no pending admin")]
     fn test_accept_without_proposal_panics() {
-        let (env, id) = setup_env();
+        let (env, id, _admin) = setup_env();
         let client = VulnerableAdminClient::new(&env, &id);
         client.accept_admin();
     }

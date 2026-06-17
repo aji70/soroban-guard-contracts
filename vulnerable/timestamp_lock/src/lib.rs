@@ -52,7 +52,11 @@ impl TimeLockedVault {
         user.require_auth();
 
         let unlock_key = DataKey::UnlockTime(user.clone());
-        let unlock_time: u64 = env.storage().persistent().get(&unlock_key).expect("unlock time not set");
+        let unlock_time: u64 = env
+            .storage()
+            .persistent()
+            .get(&unlock_key)
+            .expect("unlock time not set");
 
         // ❌ VULNERABLE: Timestamp can be manipulated within validator drift window
         // Validators can adjust timestamps by several seconds, allowing premature withdrawal

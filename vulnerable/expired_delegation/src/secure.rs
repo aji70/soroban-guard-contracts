@@ -17,8 +17,12 @@ impl SecureAdminContract {
 
     pub fn delegate_admin(env: Env, delegate: Address, expiry_ledger: u32) {
         Self::require_admin(&env);
-        env.storage().persistent().set(&DataKey::Delegate, &delegate);
-        env.storage().persistent().set(&DataKey::DelegateExpiry, &expiry_ledger);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Delegate, &delegate);
+        env.storage()
+            .persistent()
+            .set(&DataKey::DelegateExpiry, &expiry_ledger);
     }
 
     pub fn set_value(env: Env, value: u32) {
@@ -51,10 +55,7 @@ impl SecureAdminContract {
                 .persistent()
                 .get(&DataKey::DelegateExpiry)
                 .unwrap_or(0);
-            assert!(
-                env.ledger().sequence() <= expiry,
-                "delegation expired"
-            );
+            assert!(env.ledger().sequence() <= expiry, "delegation expired");
             delegate.require_auth();
             return;
         }

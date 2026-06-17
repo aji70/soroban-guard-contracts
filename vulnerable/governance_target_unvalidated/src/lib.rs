@@ -8,6 +8,7 @@ use soroban_sdk::{
     contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol, Val, Vec,
 };
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 #[derive(Clone)]

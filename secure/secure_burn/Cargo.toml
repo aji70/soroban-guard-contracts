@@ -22,3 +22,6 @@ debug-assertions = false
 panic = "abort"
 codegen-units = 1
 lto = true
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

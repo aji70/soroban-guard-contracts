@@ -1,7 +1,7 @@
 //! SECURE: Include the user identity in balance storage keys.
 #![no_std]
-use soroban_sdk::{contract, contractimpl, Address, Env, Symbol};
 use super::DataKey;
+use soroban_sdk::{contract, contractimpl, Address, Env, Symbol};
 
 #[contract]
 pub struct SecureBalanceKeyMissingUserContract;

@@ -11,6 +11,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 /// Reputation threshold a scanner must meet before its reports affect risk.

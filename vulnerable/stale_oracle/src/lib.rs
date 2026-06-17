@@ -13,6 +13,7 @@
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
 pub mod oracle;
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 use oracle::MockOracleClient;

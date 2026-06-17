@@ -37,7 +37,11 @@ impl VulnerableToken {
     /// Mint `amount` tokens to `to`. No auth check — unprotected by design for test setup.
     pub fn mint(env: Env, to: Address, amount: i128) {
         let current = get_balance(&env, &to);
-        set_balance(&env, &to, current.checked_add(amount).expect("mint overflow"));
+        set_balance(
+            &env,
+            &to,
+            current.checked_add(amount).expect("mint overflow"),
+        );
     }
 
     /// Returns the current balance of `account`, defaulting to 0.
@@ -56,8 +60,18 @@ impl VulnerableToken {
         // ❌ No from != to check — self-transfer corrupts balance
         let from_balance = get_balance(&env, &from);
         let to_balance = get_balance(&env, &to); // same slot as from_balance when from == to
-        set_balance(&env, &from, from_balance.checked_sub(amount).expect("transfer underflow"));
-        set_balance(&env, &to, to_balance.checked_add(amount).expect("transfer overflow")); // overwrites the subtraction
+        set_balance(
+            &env,
+            &from,
+            from_balance
+                .checked_sub(amount)
+                .expect("transfer underflow"),
+        );
+        set_balance(
+            &env,
+            &to,
+            to_balance.checked_add(amount).expect("transfer overflow"),
+        ); // overwrites the subtraction
     }
 }
 

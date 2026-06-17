@@ -21,6 +21,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 // ---------------------------------------------------------------------------
@@ -35,6 +36,10 @@ pub enum DataKey {
     TotalTokens,
     /// Total shares outstanding.
     TotalShares,
+    /// The vault's real token balance, as a rebasing token contract would
+    /// track it. Used only to demonstrate the divergence from `TotalTokens`;
+    /// the vulnerable contract never reads this for pricing.
+    LiveBalance,
 }
 
 // ---------------------------------------------------------------------------
@@ -90,6 +95,15 @@ impl VulnerableVault {
         env.storage()
             .persistent()
             .set(&DataKey::TotalTokens, &(total_tokens + amount));
+
+        let live: i128 = env
+            .storage()
+            .persistent()
+            .get(&DataKey::LiveBalance)
+            .unwrap_or(0);
+        env.storage()
+            .persistent()
+            .set(&DataKey::LiveBalance, &(live + amount));
     }
 
     /// Redeem `shares` for tokens.  Token amount is computed from the *cached*
@@ -129,6 +143,18 @@ impl VulnerableVault {
             .persistent()
             .set(&DataKey::TotalTokens, &(total_tokens - tokens_out));
 
+        // ❌ Payout is taken from the real balance using the stale `tokens_out`
+        //    figure — if the cached accounting overstates what's really
+        //    available, the live balance is driven negative (insolvency).
+        let live: i128 = env
+            .storage()
+            .persistent()
+            .get(&DataKey::LiveBalance)
+            .unwrap_or(0);
+        env.storage()
+            .persistent()
+            .set(&DataKey::LiveBalance, &(live - tokens_out));
+
         tokens_out
     }
 
@@ -136,12 +162,27 @@ impl VulnerableVault {
     /// token balance without updating `TotalTokens`.  In production this
     /// would be the token contract rebasing all holder balances.
     pub fn vulnerable_entry(env: Env, actor: Address, amount: i128) {
-// BUG: revocation removes the last admin without a remaining-admin check.
-    // The fixture should make this unsafe path reachable and easy to scan.
-        let _ = (actor, amount);
-        // The real balance has changed externally; TotalTokens is now stale.
-        // Nothing here reconciles the two — that is the vulnerability.
-        let _ = env;
+        let _ = actor;
+        // ❌ The real balance has changed externally; TotalTokens is never
+        // updated to match. Nothing here reconciles the two — that is the
+        // vulnerability.
+        let live: i128 = env
+            .storage()
+            .persistent()
+            .get(&DataKey::LiveBalance)
+            .unwrap_or(0);
+        env.storage()
+            .persistent()
+            .set(&DataKey::LiveBalance, &(live + amount));
+    }
+
+    /// The vault's real token balance (for test/observability purposes only;
+    /// the vulnerable contract itself never reads this for pricing).
+    pub fn live_balance(env: Env) -> i128 {
+        env.storage()
+            .persistent()
+            .get(&DataKey::LiveBalance)
+            .unwrap_or(0)
     }
 
     pub fn shares(env: Env, user: Address) -> i128 {
@@ -278,11 +319,12 @@ mod tests {
         let out = client.withdraw(&alice, &1_000);
         // The vault "pays" 1 000 from its stale accounting — it is insolvent.
         assert_eq!(out, 1_000);
-        // TotalTokens goes negative, confirming the insolvency.
+        // The real (live) balance goes negative — the vault paid out more
+        // than it actually held, confirming the insolvency.
         assert!(
-            client.total_tokens() < 0,
-            "vault is insolvent: TotalTokens = {}",
-            client.total_tokens()
+            client.live_balance() < 0,
+            "vault is insolvent: live balance = {}",
+            client.live_balance()
         );
     }
 

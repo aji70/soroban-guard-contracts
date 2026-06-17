@@ -15,6 +15,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 // ── Storage keys ─────────────────────────────────────────────────────────────
@@ -41,8 +42,12 @@ impl LendingMarket {
     /// Register an oracle feed with its raw price and exponent.
     /// `exponent` is the negative power of 10 (e.g. 7 means price / 1e7).
     pub fn set_oracle(env: Env, feed: Symbol, price: i128, exponent: u32) {
-        env.storage().persistent().set(&DataKey::Price(feed.clone()), &price);
-        env.storage().persistent().set(&DataKey::Exponent(feed), &exponent);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Price(feed.clone()), &price);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Exponent(feed), &exponent);
     }
 
     /// Deposit collateral for `user` denominated in `feed` units.

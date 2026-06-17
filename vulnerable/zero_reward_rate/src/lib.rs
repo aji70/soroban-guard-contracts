@@ -93,6 +93,7 @@ impl StakingContract {
     }
 }
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure {
     use super::DataKey;
     use soroban_sdk::{contract, contractimpl, Address, Env, Symbol};

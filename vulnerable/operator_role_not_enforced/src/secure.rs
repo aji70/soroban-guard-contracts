@@ -3,8 +3,8 @@
 //! Identical vault but `emergency_withdraw` asserts that the caller matches
 //! the stored operator address before executing privileged state changes.
 
-use soroban_sdk::{contract, contractimpl, Address, Env};
 use super::DataKey;
+use soroban_sdk::{contract, contractimpl, Address, Env};
 
 #[contract]
 pub struct SecureVault;

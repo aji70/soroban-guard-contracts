@@ -6,6 +6,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, xdr::ToXdr, Address, Bytes, BytesN, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 #[contracttype]
@@ -15,7 +16,7 @@ pub enum DataKey {
 
 pub fn vulnerable_report_signature(env: &Env, report_hash: &BytesN<32>) -> BytesN<32> {
     let mut msg = Bytes::new(env);
-    msg.append(&report_hash.to_xdr(env));
+    msg.append(&report_hash.clone().to_xdr(env));
     env.crypto().sha256(&msg).into()
 }
 
@@ -40,7 +41,9 @@ impl ReportHashUnboundContract {
     }
 
     pub fn get_report(env: Env, target_contract: Address) -> Option<BytesN<32>> {
-        env.storage().persistent().get(&DataKey::Report(target_contract))
+        env.storage()
+            .persistent()
+            .get(&DataKey::Report(target_contract))
     }
 
     pub fn report_signature(env: Env, report_hash: BytesN<32>) -> BytesN<32> {
@@ -50,6 +53,7 @@ impl ReportHashUnboundContract {
 
 #[cfg(test)]
 mod tests {
+    extern crate std;
     use super::*;
     use soroban_sdk::{testutils::Address as _, Address, BytesN, Env};
 
@@ -70,7 +74,10 @@ mod tests {
         client.submit_report(&scanner, &target_contract_a, &report_hash, &signature);
         client.submit_report(&scanner, &target_contract_b, &report_hash, &signature);
 
-        assert_eq!(client.get_report(&target_contract_a), Some(report_hash));
+        assert_eq!(
+            client.get_report(&target_contract_a),
+            Some(report_hash.clone())
+        );
         assert_eq!(client.get_report(&target_contract_b), Some(report_hash));
     }
 
@@ -87,13 +94,26 @@ mod tests {
         let nonce = 1u64;
 
         env.mock_all_auths();
-        let signature_a = client.report_signature(&scanner, &target_contract_a, &report_hash, &nonce);
+        let signature_a =
+            client.report_signature(&scanner, &target_contract_a, &report_hash, &nonce);
 
-        client.submit_report(&scanner, &target_contract_a, &report_hash, &nonce, &signature_a);
+        client.submit_report(
+            &scanner,
+            &target_contract_a,
+            &report_hash,
+            &nonce,
+            &signature_a,
+        );
 
-        let result = std::panic::catch_unwind(|| {
-            client.submit_report(&scanner, &target_contract_b, &report_hash, &nonce, &signature_a);
-        });
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            client.submit_report(
+                &scanner,
+                &target_contract_b,
+                &report_hash,
+                &nonce,
+                &signature_a,
+            );
+        }));
         assert!(result.is_err());
     }
 }

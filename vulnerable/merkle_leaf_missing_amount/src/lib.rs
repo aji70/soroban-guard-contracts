@@ -13,10 +13,11 @@
 
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, token, Address, Bytes, BytesN, Env, Vec,
-    xdr::ToXdr,
+    contract, contractimpl, contracttype, symbol_short, token, xdr::ToXdr, Address, Bytes, BytesN,
+    Env, Vec,
 };
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 #[contracttype]
@@ -186,7 +187,9 @@ mod tests {
         let other = Address::generate(&env);
 
         let token_admin = Address::generate(&env);
-        let token_id = env.register_stellar_asset_contract_v2(token_admin.clone()).address();
+        let token_id = env
+            .register_stellar_asset_contract_v2(token_admin.clone())
+            .address();
 
         StellarAssetClient::new(&env, &token_id).mint(&admin, &1_000_000);
 
@@ -212,7 +215,10 @@ mod tests {
         client.claim(&claimant, &claimed_amount, &proof);
         assert!(client.get_claimed(&claimant));
 
-        assert_eq!(TokenClient::new(&env, &token_id).balance(&claimant), claimed_amount);
+        assert_eq!(
+            TokenClient::new(&env, &token_id).balance(&claimant),
+            claimed_amount
+        );
     }
 
     /// Test boundary: claiming exactly one unit above allocated amount succeeds.
@@ -232,7 +238,10 @@ mod tests {
 
         // ❌ VULNERABLE: even one unit over is accepted
         client.claim(&claimant, &claimed_amount, &proof);
-        assert_eq!(TokenClient::new(&env, &token_id).balance(&claimant), claimed_amount);
+        assert_eq!(
+            TokenClient::new(&env, &token_id).balance(&claimant),
+            claimed_amount
+        );
     }
 
     /// Test that secure version rejects inflated claims.

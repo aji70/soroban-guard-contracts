@@ -61,9 +61,7 @@ impl VulnerableNearOverflow {
 
         let key = DataKey::Balance(user.clone());
         let balance: i128 = env.storage().persistent().get(&key).unwrap_or(0);
-        let new_balance = balance
-            .checked_sub(amount)
-            .expect("insufficient funds");
+        let new_balance = balance.checked_sub(amount).expect("insufficient funds");
         env.storage().persistent().set(&key, &new_balance);
     }
 
@@ -74,9 +72,7 @@ impl VulnerableNearOverflow {
         let key = DataKey::Balance(user.clone());
         let balance: i128 = env.storage().persistent().get(&key).unwrap_or(0);
         // Safe because balance was validated during deposit
-        let new_balance = balance
-            .checked_mul(rate)
-            .expect("balance rate overflow");
+        let new_balance = balance.checked_mul(rate).expect("balance rate overflow");
         env.storage().persistent().set(&key, &new_balance);
     }
 

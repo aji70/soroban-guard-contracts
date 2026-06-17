@@ -1,5 +1,5 @@
-use soroban_sdk::{contract, contractimpl, Address, Env};
 use super::{token, DataKey};
+use soroban_sdk::{contract, contractimpl, Address, Env};
 
 #[contract]
 pub struct SecureVault;

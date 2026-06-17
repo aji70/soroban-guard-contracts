@@ -6,6 +6,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 #[contracttype]
@@ -27,7 +28,10 @@ impl BalanceKeyMissingUserContract {
     }
 
     pub fn balance(env: Env, asset: Symbol) -> i128 {
-        env.storage().persistent().get(&DataKey::Balance(asset)).unwrap_or(0)
+        env.storage()
+            .persistent()
+            .get(&DataKey::Balance(asset))
+            .unwrap_or(0)
     }
 }
 

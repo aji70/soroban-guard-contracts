@@ -32,7 +32,9 @@ impl SecureTwap {
         env.storage().persistent().set(&DataKey::Admin, &admin);
         env.storage().persistent().set(&DataKey::Window, &window);
         let empty: Vec<Observation> = Vec::new(&env);
-        env.storage().persistent().set(&DataKey::Observations, &empty);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Observations, &empty);
     }
 
     /// Record a new price observation, trimming the buffer to `window` entries.

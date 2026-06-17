@@ -22,8 +22,12 @@ impl SecureMarket {
         assert!(max_move_bps > 0, "threshold must be positive");
 
         env.storage().persistent().set(&DataKey::Admin, &admin);
-        env.storage().persistent().set(&DataKey::Price, &initial_price);
-        env.storage().persistent().set(&DataKey::MaxMoveBps, &max_move_bps);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Price, &initial_price);
+        env.storage()
+            .persistent()
+            .set(&DataKey::MaxMoveBps, &max_move_bps);
         env.storage().persistent().set(&DataKey::Paused, &false);
     }
 

@@ -7,8 +7,8 @@
 //! Fix: digest = sha256(contract_id || network_id || nonce || deadline ||
 //!                      "permit" || owner || spender || amount)
 
+use super::{get_allowance, get_balance, get_nonce, inc_nonce, set_allowance, set_balance};
 use soroban_sdk::{contract, contractimpl, symbol_short, xdr::ToXdr, Address, Bytes, BytesN, Env};
-use super::{get_balance, set_balance, get_allowance, set_allowance, get_nonce, inc_nonce};
 
 /// Build a domain-separated permit digest.
 ///
@@ -108,14 +108,12 @@ impl SecureToken {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::{Address as _, Ledger as _}, Address, BytesN, Env};
+    use soroban_sdk::{
+        testutils::{Address as _, Ledger as _},
+        Address, BytesN, Env,
+    };
 
-    fn setup_two_tokens(
-        env: &Env,
-    ) -> (
-        SecureTokenClient<'static>,
-        SecureTokenClient<'static>,
-    ) {
+    fn setup_two_tokens(env: &Env) -> (SecureTokenClient<'static>, SecureTokenClient<'static>) {
         let id_a = env.register_contract(None, SecureToken);
         let id_b = env.register_contract(None, SecureToken);
         (

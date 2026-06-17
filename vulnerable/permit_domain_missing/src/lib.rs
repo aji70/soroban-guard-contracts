@@ -16,6 +16,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, xdr::ToXdr, Address, Bytes, BytesN, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
@@ -106,13 +107,7 @@ impl VulnerableToken {
     /// The scanner fixture uses `require_auth` to represent the off-chain
     /// signature check; the exploitable flaw is in `vulnerable_permit_digest`
     /// which the scanner detects by inspecting what fields are hashed.
-    pub fn permit(
-        env: Env,
-        owner: Address,
-        spender: Address,
-        amount: i128,
-        _sig: BytesN<64>,
-    ) {
+    pub fn permit(env: Env, owner: Address, spender: Address, amount: i128, _sig: BytesN<64>) {
         // Simulate: off-chain verifier checked sig over vulnerable_permit_digest.
         // require_auth stands in for that check in the test environment.
         owner.require_auth();

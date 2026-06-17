@@ -13,7 +13,9 @@ impl SecureTokenContract {
             panic!("already initialized");
         }
         env.storage().persistent().set(&DataKey::Admin, &admin);
-        env.storage().persistent().set(&DataKey::TotalSupply, &0i128);
+        env.storage()
+            .persistent()
+            .set(&DataKey::TotalSupply, &0i128);
     }
 
     /// ✅ Fixed: tracks total supply and rejects mints that exceed MAX_SUPPLY.

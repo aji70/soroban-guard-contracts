@@ -21,6 +21,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Vec};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -69,7 +70,9 @@ impl VulnerableTwap {
         env.storage().persistent().set(&DataKey::Admin, &admin);
         env.storage().persistent().set(&DataKey::Window, &window);
         let empty: Vec<Observation> = Vec::new(&env);
-        env.storage().persistent().set(&DataKey::Observations, &empty);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Observations, &empty);
     }
 
     /// Record a new price observation.
@@ -160,7 +163,10 @@ impl VulnerableTwap {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::{Address as _, Ledger as _}, Address, Env};
+    use soroban_sdk::{
+        testutils::{Address as _, Ledger as _},
+        Address, Env,
+    };
 
     // ── helpers ───────────────────────────────────────────────────────────────
 
@@ -174,7 +180,8 @@ mod tests {
     }
 
     fn advance(env: &Env, ledgers: u32) {
-        env.ledger().set_sequence_number(env.ledger().sequence() + ledgers);
+        env.ledger()
+            .set_sequence_number(env.ledger().sequence() + ledgers);
     }
 
     // ── Vulnerable path ───────────────────────────────────────────────────────
@@ -216,8 +223,10 @@ mod tests {
 
         // ❌ TWAP == manipulated spot price; no averaging occurred.
         let twap = client.get_twap();
-        assert_eq!(twap, 100_000_000,
-            "vulnerable: TWAP should equal the manipulated spot price");
+        assert_eq!(
+            twap, 100_000_000,
+            "vulnerable: TWAP should equal the manipulated spot price"
+        );
     }
 
     /// Boundary: window == 1 is the exact boundary that should be rejected.
@@ -250,8 +259,11 @@ mod tests {
         client.record_price(&admin, &100_000_000);
         // Buffer: [20M, 30M, 100M] → avg = 50M — still dampened.
         let twap = client.get_twap();
-        assert!(twap < 100_000_000,
-            "larger window dampens the spike: twap={}", twap);
+        assert!(
+            twap < 100_000_000,
+            "larger window dampens the spike: twap={}",
+            twap
+        );
     }
 
     // ── Secure mirror tests ───────────────────────────────────────────────────
@@ -330,8 +342,11 @@ mod tests {
         // TWAP = (9 * 10_000_000 + 100_000_000) / 10 = 19_000_000
         // Still far below the manipulated spot price of 100_000_000.
         let twap = client.get_twap();
-        assert!(twap < 100_000_000,
-            "secure: spike must not dominate TWAP; got {}", twap);
+        assert!(
+            twap < 100_000_000,
+            "secure: spike must not dominate TWAP; got {}",
+            twap
+        );
         assert_eq!(twap, 19_000_000);
     }
 }

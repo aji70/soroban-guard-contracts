@@ -16,6 +16,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 // ── Oracle response type ──────────────────────────────────────────────────────
@@ -56,7 +57,7 @@ impl OracleConsumer {
         // ❌ confidence is destructured away and never checked
         let OraclePrice {
             price,
-            confidence: _,   // BUG: silently discarded
+            confidence: _, // BUG: silently discarded
             timestamp: _,
         } = oracle;
 
@@ -106,7 +107,7 @@ mod tests {
         let (env, actor, client) = setup();
         let oracle = OraclePrice {
             price: 900,
-            confidence: 5,   // 0.5 % of price — reliable
+            confidence: 5, // 0.5 % of price — reliable
             timestamp: 1000,
         };
         client.consume_price(&actor, &oracle, &1000_i128);

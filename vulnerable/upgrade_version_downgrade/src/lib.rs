@@ -7,6 +7,7 @@
 
 use soroban_sdk::{contract, contractimpl, contracttype, BytesN, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 #[contracttype]

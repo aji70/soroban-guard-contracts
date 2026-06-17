@@ -6,6 +6,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 #[contracttype]
@@ -48,8 +49,12 @@ impl SequenceAsTimestampContract {
             panic!("still locked");
         }
 
-        env.storage().persistent().set(&DataKey::Balance(user.clone()), &0i128);
-        env.storage().persistent().remove(&DataKey::UnlockSequence(user));
+        env.storage()
+            .persistent()
+            .set(&DataKey::Balance(user.clone()), &0i128);
+        env.storage()
+            .persistent()
+            .remove(&DataKey::UnlockSequence(user));
     }
 
     pub fn balance(env: Env, user: Address) -> i128 {
@@ -60,14 +65,17 @@ impl SequenceAsTimestampContract {
     }
 
     pub fn unlock_sequence(env: Env, user: Address) -> Option<u32> {
-        env.storage().persistent().get(&DataKey::UnlockSequence(user))
+        env.storage()
+            .persistent()
+            .get(&DataKey::UnlockSequence(user))
     }
 }
 
 #[cfg(test)]
 mod tests {
+    extern crate std;
     use super::*;
-    use soroban_sdk::{testutils::Ledger as _, testutils::Address as _, Address, Env};
+    use soroban_sdk::{testutils::Address as _, testutils::Ledger as _, Address, Env};
 
     #[test]
     fn test_vulnerable_lock_does_not_unlock_after_one_day_timestamp_advance() {
@@ -82,9 +90,11 @@ mod tests {
         client.deposit(&alice, &1000, &duration);
 
         let current_timestamp = env.ledger().timestamp();
-        env.ledger().set_timestamp(current_timestamp + u64::from(duration));
+        env.ledger()
+            .set_timestamp(current_timestamp + u64::from(duration));
 
-        let result = std::panic::catch_unwind(|| client.withdraw(&alice));
+        let result =
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| client.withdraw(&alice)));
         assert!(result.is_err());
         assert_eq!(client.balance(&alice), 1000);
     }
@@ -102,7 +112,8 @@ mod tests {
         client.deposit(&alice, &1000, &duration);
 
         let current_timestamp = env.ledger().timestamp();
-        env.ledger().set_timestamp(current_timestamp + u64::from(duration));
+        env.ledger()
+            .set_timestamp(current_timestamp + u64::from(duration));
 
         client.withdraw(&alice);
         assert_eq!(client.balance(&alice), 0);

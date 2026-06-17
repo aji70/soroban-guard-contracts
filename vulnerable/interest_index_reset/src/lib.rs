@@ -6,6 +6,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 pub const INDEX_SCALE: i128 = 1_000_000;

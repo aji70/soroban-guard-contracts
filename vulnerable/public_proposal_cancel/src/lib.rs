@@ -49,7 +49,9 @@ impl PublicProposalCancel {
                 status: ProposalStatus::Active,
             },
         );
-        env.storage().instance().set(&DataKey::Proposals, &proposals);
+        env.storage()
+            .instance()
+            .set(&DataKey::Proposals, &proposals);
     }
 
     /// BUG: cancel marks proposals canceled without a permission check.
@@ -66,29 +68,27 @@ impl PublicProposalCancel {
                 proposals.set(id, proposal);
             }
         }
-        env.storage().instance().set(&DataKey::Proposals, &proposals);
+        env.storage()
+            .instance()
+            .set(&DataKey::Proposals, &proposals);
     }
 
     pub fn cancel_vulnerable(env: Env, caller: Address, proposal_id: u32) {
         let _ = caller;
-        let mut proposals: Map<u32, Proposal> = env
-            .storage()
-            .instance()
-            .get(&DataKey::Proposals)
-            .unwrap();
+        let mut proposals: Map<u32, Proposal> =
+            env.storage().instance().get(&DataKey::Proposals).unwrap();
         let mut proposal = proposals.get(proposal_id).unwrap();
         proposal.status = ProposalStatus::Canceled;
         proposals.set(proposal_id, proposal);
-        env.storage().instance().set(&DataKey::Proposals, &proposals);
+        env.storage()
+            .instance()
+            .set(&DataKey::Proposals, &proposals);
     }
 
     pub fn cancel_secure(env: Env, caller: Address, proposal_id: u32) {
         caller.require_auth();
-        let mut proposals: Map<u32, Proposal> = env
-            .storage()
-            .instance()
-            .get(&DataKey::Proposals)
-            .unwrap();
+        let mut proposals: Map<u32, Proposal> =
+            env.storage().instance().get(&DataKey::Proposals).unwrap();
         let proposal = proposals.get(proposal_id).unwrap();
         let guardian: Address = env.storage().instance().get(&DataKey::Guardian).unwrap();
         if caller != proposal.proposer && caller != guardian {
@@ -97,7 +97,9 @@ impl PublicProposalCancel {
         let mut proposal = proposal;
         proposal.status = ProposalStatus::Canceled;
         proposals.set(proposal_id, proposal);
-        env.storage().instance().set(&DataKey::Proposals, &proposals);
+        env.storage()
+            .instance()
+            .set(&DataKey::Proposals, &proposals);
     }
 
     pub fn get_status(env: Env, proposal_id: u32) -> ProposalStatus {
@@ -115,7 +117,13 @@ mod tests {
     use super::*;
     use soroban_sdk::{testutils::Address as _, Address, Env};
 
-    fn setup() -> (Env, PublicProposalCancelClient<'static>, Address, Address, Address) {
+    fn setup() -> (
+        Env,
+        PublicProposalCancelClient<'static>,
+        Address,
+        Address,
+        Address,
+    ) {
         let env = Env::default();
         let contract_id = env.register_contract(None, PublicProposalCancel);
         let client = PublicProposalCancelClient::new(&env, &contract_id);

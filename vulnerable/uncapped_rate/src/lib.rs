@@ -10,6 +10,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 pub const MAX_RATE: u64 = 1_000_000;
@@ -119,8 +120,11 @@ impl StakingContract {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::{Address as _, Ledger as _}, Address, Env};
     use secure::SecureStakingContractClient;
+    use soroban_sdk::{
+        testutils::{Address as _, Ledger as _},
+        Address, Env,
+    };
 
     fn setup() -> (Env, Address, Address) {
         let env = Env::default();

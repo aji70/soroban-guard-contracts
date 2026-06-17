@@ -34,8 +34,7 @@ impl SecureOracleConsumer {
         }
 
         // ✅ Reject if confidence band is too wide relative to price
-        let confidence_bps = confidence.checked_mul(10_000)
-            .expect("confidence overflow") / price;
+        let confidence_bps = confidence.checked_mul(10_000).expect("confidence overflow") / price;
         if confidence_bps > MAX_CONFIDENCE_BPS {
             panic!("price confidence too wide");
         }

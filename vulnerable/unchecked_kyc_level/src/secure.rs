@@ -1,5 +1,5 @@
-use soroban_sdk::{contract, contractimpl, Address, Env};
 use super::{DataKey, MAX_KYC_LEVEL};
+use soroban_sdk::{contract, contractimpl, Address, Env};
 
 #[contract]
 pub struct SecureKyc;

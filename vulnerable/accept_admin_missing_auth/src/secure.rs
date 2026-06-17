@@ -15,7 +15,9 @@ impl SecureAdmin {
         if env.storage().persistent().has(&SecureDataKey::Admin) {
             panic!("already initialized");
         }
-        env.storage().persistent().set(&SecureDataKey::Admin, &admin);
+        env.storage()
+            .persistent()
+            .set(&SecureDataKey::Admin, &admin);
     }
 
     /// Propose a new admin. Only the current admin may call this.
@@ -41,9 +43,10 @@ impl SecureAdmin {
             .get(&SecureDataKey::Admin)
             .expect("not initialized");
         current.require_auth();
-        env.storage().persistent().remove(&SecureDataKey::PendingAdmin);
-        env.events()
-            .publish((symbol_short!("cancel"),), (current,));
+        env.storage()
+            .persistent()
+            .remove(&SecureDataKey::PendingAdmin);
+        env.events().publish((symbol_short!("cancel"),), (current,));
     }
 
     /// SECURE: require the pending admin to authorise the transfer before
@@ -56,7 +59,9 @@ impl SecureAdmin {
             .expect("no pending admin");
         // ✅ Require the pending admin to sign the acceptance.
         pending.require_auth();
-        env.storage().persistent().set(&SecureDataKey::Admin, &pending);
+        env.storage()
+            .persistent()
+            .set(&SecureDataKey::Admin, &pending);
         env.storage()
             .persistent()
             .remove(&SecureDataKey::PendingAdmin);

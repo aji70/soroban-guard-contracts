@@ -12,6 +12,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 #[contracttype]
@@ -93,7 +94,10 @@ impl TimeLockVault {
 
     /// Returns the stored admin address.
     pub fn get_admin(env: Env) -> Address {
-        env.storage().persistent().get(&DataKey::Admin).expect("admin not initialized")
+        env.storage()
+            .persistent()
+            .get(&DataKey::Admin)
+            .expect("admin not initialized")
     }
 }
 

@@ -10,6 +10,9 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
+pub mod secure;
+
 #[contracttype]
 pub enum DataKey {
     Balance(Address),
@@ -55,7 +58,9 @@ impl TokenContract {
         let to_key = DataKey::Balance(to.clone());
         let from_bal: i128 = env.storage().persistent().get(&from_key).unwrap_or(0);
         let to_bal: i128 = env.storage().persistent().get(&to_key).unwrap_or(0);
-        env.storage().persistent().set(&from_key, &(from_bal - amount));
+        env.storage()
+            .persistent()
+            .set(&from_key, &(from_bal - amount));
         env.storage().persistent().set(&to_key, &(to_bal + amount));
 
         env.events()
@@ -99,18 +104,23 @@ mod tests {
         assert_eq!(client.balance(&bob), 500);
     }
 
-    /// After the fix, a blacklisted sender's transfer must panic.
+    /// The secure mirror checks `from` as well, so a blacklisted sender's
+    /// transfer must panic.
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "sender is blacklisted")]
     fn test_blacklisted_sender_is_blocked_after_fix() {
-        let (_env, client, alice, bob) = setup();
+        use secure::SecureTokenContractClient;
+
+        let env = Env::default();
+        env.mock_all_auths();
+        let id = env.register_contract(None, secure::SecureTokenContract);
+        let client = SecureTokenContractClient::new(&env, &id);
+        let alice = Address::generate(&env);
+        let bob = Address::generate(&env);
+
         client.mint(&alice, &1000);
         client.blacklist(&alice);
 
-        // This test documents the expected fixed behaviour.
-        // With the current vulnerable code this does NOT panic (bug).
-        // Once the fix is applied (check from as well), it will panic and this
-        // test will pass.
         client.transfer(&alice, &bob, &500);
     }
 

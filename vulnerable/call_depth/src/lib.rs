@@ -1,18 +1,24 @@
 //! VULNERABLE: No cross-contract call depth guard.
 //!
 //! Soroban enforces a maximum cross-contract call depth. A contract that
-//! recursively calls itself without tracking depth will panic at the host
-//! limit mid-execution, potentially leaving state partially updated.
+//! forwards a call down a chain of contracts without tracking depth will
+//! panic at the host limit mid-execution, potentially leaving state
+//! partially updated.
 //!
-//! VULNERABILITY: `process()` recurses via a cross-contract client with no
-//! depth check. An attacker can craft a depth value that hits the Soroban
-//! call depth limit at a critical point, causing a panic.
+//! Soroban prohibits a contract from re-entering itself, so the chain is
+//! modelled as a list of distinct contract instances (deployed from the
+//! same Wasm) that each forward to the next — the same shape a chain of
+//! malicious or buggy forwarder/proxy contracts would take on-chain.
 //!
-//! SECURE MIRROR: `process_safe()` rejects calls that would exceed
-//! MAX_DEPTH before any state mutation occurs.
+//! VULNERABILITY: `process()` forwards to the next contract in `chain` with
+//! no depth check. An attacker can craft a chain long enough to hit the
+//! Soroban call depth limit at a critical point, causing a panic.
+//!
+//! SECURE MIRROR: `process_safe()` rejects chains longer than MAX_DEPTH
+//! before any state mutation occurs.
 
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
+use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Vec};
 
 /// Safe recursion threshold — well below Soroban's host limit.
 pub const MAX_DEPTH: u32 = 10;
@@ -28,22 +34,19 @@ pub struct CallDepthContract;
 
 #[contractimpl]
 impl CallDepthContract {
-    /// VULNERABLE: recurses via cross-contract call with no depth guard.
-    /// Will panic at the Soroban call depth limit mid-execution; any state
-    /// updates below the recursive call may never be reached.
+    /// VULNERABLE: forwards to the next contract in `chain` with no depth
+    /// guard. Will panic at the Soroban call depth limit mid-chain; any
+    /// state updates below the forwarded call may never be reached.
     ///
     /// # Vulnerability
-    /// No depth check before recursing. Impact: panic mid-execution leaves state partially updated.
-    pub fn process(env: Env, contract_id: Address, depth: u32) {
-        // ❌ No depth check — will hit Soroban call depth limit and panic
-        if depth > 0 {
-            CallDepthContractClient::new(&env, &contract_id)
-                .process(&contract_id, &(depth - 1));
+    /// No depth check before forwarding. Impact: panic mid-execution leaves state partially updated.
+    pub fn process(env: Env, chain: Vec<Address>) {
+        // ❌ No depth check — a long enough chain hits Soroban's call depth limit and panics
+        if let Some(next_id) = chain.first() {
+            CallDepthContractClient::new(&env, &next_id).process(&chain.slice(1..));
         }
         // State update here may never be reached if depth limit is hit above
-        env.storage()
-            .persistent()
-            .set(&DataKey::Processed, &true);
+        env.storage().persistent().set(&DataKey::Processed, &true);
         let count: u32 = env
             .storage()
             .persistent()
@@ -54,18 +57,18 @@ impl CallDepthContract {
             .set(&DataKey::ProcessedCount, &(count + 1));
     }
 
-    /// SECURE: rejects depth values that would exceed MAX_DEPTH before any
-    /// recursive call or state mutation.
-    pub fn process_safe(env: Env, contract_id: Address, depth: u32) {
-        // ✅ Explicit depth guard — panics with a clear message before recursing
-        assert!(depth <= MAX_DEPTH, "call depth exceeds safe threshold");
-        if depth > 0 {
-            CallDepthContractClient::new(&env, &contract_id)
-                .process_safe(&contract_id, &(depth - 1));
+    /// SECURE: rejects chains longer than MAX_DEPTH before any forwarded
+    /// call or state mutation.
+    pub fn process_safe(env: Env, chain: Vec<Address>) {
+        // ✅ Explicit depth guard — panics with a clear message before forwarding
+        assert!(
+            chain.len() <= MAX_DEPTH,
+            "call depth exceeds safe threshold"
+        );
+        if let Some(next_id) = chain.first() {
+            CallDepthContractClient::new(&env, &next_id).process_safe(&chain.slice(1..));
         }
-        env.storage()
-            .persistent()
-            .set(&DataKey::Processed, &true);
+        env.storage().persistent().set(&DataKey::Processed, &true);
         let count: u32 = env
             .storage()
             .persistent()
@@ -96,16 +99,29 @@ impl CallDepthContract {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{Env};
+    use soroban_sdk::Env;
+
+    /// Deploys a fresh `CallDepthContract` entry point plus `hops` additional
+    /// distinct instances to forward through. Soroban prohibits a contract
+    /// from re-entering itself, so each hop in the chain must be a separate
+    /// deployed instance.
+    fn build_chain(env: &Env, hops: u32) -> (Address, Vec<Address>) {
+        let entry = env.register_contract(None, CallDepthContract);
+        let mut chain = Vec::new(env);
+        for _ in 0..hops {
+            chain.push_back(env.register_contract(None, CallDepthContract));
+        }
+        (entry, chain)
+    }
 
     #[test]
     fn test_shallow_recursion_completes() {
         let env = Env::default();
-        let contract_id = env.register_contract(None, CallDepthContract);
-        let client = CallDepthContractClient::new(&env, &contract_id);
+        let (entry, chain) = build_chain(&env, 0);
+        let client = CallDepthContractClient::new(&env, &entry);
 
-        // depth=0 — no recursion, just sets state
-        client.process(&contract_id, &0);
+        // Empty chain — no forwarding, just sets state
+        client.process(&chain);
         assert!(client.is_processed());
     }
 
@@ -113,20 +129,20 @@ mod tests {
     #[should_panic]
     fn test_deep_recursion_hits_call_depth_limit() {
         let env = Env::default();
-        let contract_id = env.register_contract(None, CallDepthContract);
-        let client = CallDepthContractClient::new(&env, &contract_id);
+        // Long chain — will exceed Soroban's cross-contract call depth limit (100)
+        let (entry, chain) = build_chain(&env, 150);
+        let client = CallDepthContractClient::new(&env, &entry);
 
-        // Large depth — will exceed Soroban's cross-contract call depth limit
-        client.process(&contract_id, &64);
+        client.process(&chain);
     }
 
     #[test]
     fn test_secure_shallow_recursion_completes() {
         let env = Env::default();
-        let contract_id = env.register_contract(None, CallDepthContract);
-        let client = CallDepthContractClient::new(&env, &contract_id);
+        let (entry, chain) = build_chain(&env, 5);
+        let client = CallDepthContractClient::new(&env, &entry);
 
-        client.process_safe(&contract_id, &5);
+        client.process_safe(&chain);
         assert!(client.is_processed());
     }
 
@@ -134,9 +150,9 @@ mod tests {
     #[should_panic(expected = "call depth exceeds safe threshold")]
     fn test_secure_rejects_depth_above_max() {
         let env = Env::default();
-        let contract_id = env.register_contract(None, CallDepthContract);
-        let client = CallDepthContractClient::new(&env, &contract_id);
+        let (entry, chain) = build_chain(&env, MAX_DEPTH + 1);
+        let client = CallDepthContractClient::new(&env, &entry);
 
-        client.process_safe(&contract_id, &(MAX_DEPTH + 1));
+        client.process_safe(&chain);
     }
 }

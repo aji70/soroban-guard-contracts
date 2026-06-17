@@ -16,6 +16,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
@@ -50,9 +51,10 @@ pub(crate) fn get_allowance(env: &Env, owner: &Address, delegate: &Address) -> i
 }
 
 pub(crate) fn set_allowance(env: &Env, owner: &Address, delegate: &Address, amount: i128) {
-    env.storage()
-        .persistent()
-        .set(&DataKey::Allowance(owner.clone(), delegate.clone()), &amount);
+    env.storage().persistent().set(
+        &DataKey::Allowance(owner.clone(), delegate.clone()),
+        &amount,
+    );
 }
 
 // ── Vulnerable token ──────────────────────────────────────────────────────────

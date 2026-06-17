@@ -53,6 +53,7 @@ impl SilentAdminContract {
     }
 }
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure {
     use soroban_sdk::{contract, contractimpl, symbol_short, Address, Env};
 
@@ -82,10 +83,8 @@ pub mod secure {
             env.storage().persistent().set(&ADMIN_KEY, &new_admin);
 
             // ✅ Emit event so off-chain monitors can detect the change
-            env.events().publish(
-                (symbol_short!("AdminChg"),),
-                (old_admin, new_admin),
-            );
+            env.events()
+                .publish((symbol_short!("AdminChg"),), (old_admin, new_admin));
         }
 
         pub fn get_admin(env: Env) -> Address {
@@ -137,7 +136,7 @@ mod tests {
     #[test]
     fn test_secure_set_admin_emits_admin_chg_event() {
         use crate::secure::SecureAdminContract;
-        use soroban_sdk::{symbol_short, IntoVal, Val, Vec, TryFromVal};
+        use soroban_sdk::{symbol_short, IntoVal, TryFromVal, Val, Vec};
 
         let env = Env::default();
         env.mock_all_auths();
@@ -157,7 +156,8 @@ mod tests {
 
         // Verify topic is ("AdminChg",)
         let topic_vec = Vec::<Val>::try_from_val(&env, &topics).unwrap();
-        let topic_sym = soroban_sdk::Symbol::try_from_val(&env, &topic_vec.get(0).unwrap()).unwrap();
+        let topic_sym =
+            soroban_sdk::Symbol::try_from_val(&env, &topic_vec.get(0).unwrap()).unwrap();
         assert_eq!(topic_sym, symbol_short!("AdminChg"));
 
         // Verify data contains (old_admin, new_admin)
@@ -181,26 +181,22 @@ mod tests {
         let admin = Address::generate(&env);
         let attacker = Address::generate(&env);
 
-        // Initialize without mocking auths so set_admin will fail auth
+        // Initialize with auth mocked.
         env.mock_all_auths();
         client.initialize(&admin);
 
-        // Drop mock_all_auths — no auth provided for the next call
-        let env2 = Env::default();
-        let id2 = env2.register_contract(None, SecureAdminContract);
-        let client2 = secure::SecureAdminContractClient::new(&env2, &id2);
-        env2.mock_all_auths();
-        client2.initialize(&admin);
+        // Drop mocked auths — no auth provided for the next call.
+        env.set_auths(&[]);
 
         // Now call without any auth mock — should panic
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            client2.set_admin(&attacker);
+            client.set_admin(&attacker);
         }));
 
         assert!(result.is_err(), "set_admin must panic without valid auth");
 
         // No events should have been emitted
-        let events = env2.events().all();
+        let events = env.events().all();
         assert_eq!(events.len(), 0, "no event must be emitted on auth failure");
     }
 }

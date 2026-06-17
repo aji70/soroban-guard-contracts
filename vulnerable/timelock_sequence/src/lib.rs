@@ -67,9 +67,7 @@ impl VulnerableTimelockSequence {
     }
 
     pub fn unlock_ledger(env: Env, user: Address) -> Option<u32> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::UnlockLedger(user))
+        env.storage().persistent().get(&DataKey::UnlockLedger(user))
     }
 
     pub fn current_sequence(env: Env) -> u32 {
@@ -126,7 +124,8 @@ mod tests {
         let unlock_ledger = 1_000 + MIN_LOCK_DURATION;
         client.lock(&user, &10_000, &unlock_ledger);
 
-        let early_withdraw = std::panic::catch_unwind(|| client.withdraw(&user));
+        let early_withdraw =
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| client.withdraw(&user)));
         assert!(early_withdraw.is_err());
         assert_eq!(client.amount(&user), 10_000);
 

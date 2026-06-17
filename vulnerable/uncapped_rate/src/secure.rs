@@ -1,5 +1,5 @@
-use soroban_sdk::{contract, contractimpl, Address, Env};
 use super::{DataKey, MAX_RATE};
+use soroban_sdk::{contract, contractimpl, Address, Env};
 
 #[contract]
 pub struct SecureStakingContract;
@@ -90,4 +90,3 @@ impl SecureStakingContract {
         admin.require_auth();
     }
 }
-

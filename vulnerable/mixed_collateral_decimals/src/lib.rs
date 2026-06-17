@@ -15,6 +15,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 // ── Storage keys ─────────────────────────────────────────────────────────────
@@ -40,8 +41,12 @@ pub struct LendingPool;
 impl LendingPool {
     /// Register a token with its USD price (1e6 scale) and decimal count.
     pub fn register_token(env: Env, token: Symbol, price_usd: i128, decimals: u32) {
-        env.storage().persistent().set(&DataKey::Price(token.clone()), &price_usd);
-        env.storage().persistent().set(&DataKey::Decimals(token), &decimals);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Price(token.clone()), &price_usd);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Decimals(token), &decimals);
     }
 
     /// Deposit `amount` raw token units of `token` as collateral for `user`.
@@ -193,7 +198,7 @@ mod tests {
         // $1 per token, 6 decimals → 1_000_000 raw units = $1.00 (1_000_000 at 1e6)
         client.register_token(&token_a, &1_000_000_i128, &6);
         client.deposit(&user, &token_a, &1_000_000_i128); // deposit $1
-        // Borrow $0.50 — within collateral.
+                                                          // Borrow $0.50 — within collateral.
         let borrowed = client.borrow(&user, &500_000_i128);
         assert_eq!(borrowed, 500_000_i128);
     }

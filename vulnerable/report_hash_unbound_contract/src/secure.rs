@@ -1,7 +1,7 @@
 //! SECURE: Bind signed reports to the target contract and scanner identity.
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, xdr::ToXdr, Address, Bytes, BytesN, Env};
 use super::DataKey;
+use soroban_sdk::{contract, contractimpl, contracttype, xdr::ToXdr, Address, Bytes, BytesN, Env};
 
 pub fn secure_report_signature(
     env: &Env,
@@ -13,7 +13,7 @@ pub fn secure_report_signature(
     let mut msg = Bytes::new(env);
     msg.append(&target_contract.to_xdr(env));
     msg.append(&scanner.to_xdr(env));
-    msg.append(&report_hash.to_xdr(env));
+    msg.append(&report_hash.clone().to_xdr(env));
     msg.append(&Bytes::from_array(env, &nonce.to_be_bytes()));
     env.crypto().sha256(&msg).into()
 }
@@ -32,7 +32,8 @@ impl SecureReportHashUnboundContract {
         signature: BytesN<32>,
     ) {
         scanner.require_auth();
-        let expected = secure_report_signature(&env, &target_contract, &scanner, &report_hash, nonce);
+        let expected =
+            secure_report_signature(&env, &target_contract, &scanner, &report_hash, nonce);
         assert_eq!(signature, expected, "invalid report signature");
         env.storage()
             .persistent()
@@ -40,7 +41,9 @@ impl SecureReportHashUnboundContract {
     }
 
     pub fn get_report(env: Env, target_contract: Address) -> Option<BytesN<32>> {
-        env.storage().persistent().get(&DataKey::Report(target_contract))
+        env.storage()
+            .persistent()
+            .get(&DataKey::Report(target_contract))
     }
 
     pub fn report_signature(

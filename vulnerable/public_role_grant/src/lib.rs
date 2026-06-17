@@ -47,8 +47,8 @@ impl PublicRoleGrant {
 
         // Emit event after write (vulnerable path still writes state correctly,
         // but the bug is missing auth). This keeps the crate simple.
-        env.events().publish((symbol_short!("ogv"),), (actor, amount));
-
+        env.events()
+            .publish((symbol_short!("ogv"),), (actor, amount));
     }
 
     /// Operator-only restricted functionality.
@@ -93,18 +93,13 @@ mod client {
 
 // Unit tests call contract methods directly; no auto-generated clients.
 
-
-
-
-
-
 #[cfg(test)]
 mod tests {
 
     use super::*;
     use soroban_sdk::{testutils::Address as _, Address, Env};
 
-fn setup() -> (Env, Address, Address) {
+    fn setup() -> (Env, Address, Address) {
         let env = Env::default();
         let contract_id = env.register_contract(None, PublicRoleGrant);
 
@@ -116,9 +111,7 @@ fn setup() -> (Env, Address, Address) {
             PublicRoleGrant::initialize(env.clone(), admin.clone())
         });
         (env, admin, attacker)
-
     }
-
 
     #[test]
     fn test_vulnerable_path_allows_public_operator_escalation() {
@@ -139,9 +132,7 @@ fn setup() -> (Env, Address, Address) {
             PublicRoleGrant::is_operator(env.clone(), attacker.clone())
         });
         assert!(is_op);
-
     }
-
 
     /// Boundary condition: amount == 0 should still grant operator on the
     /// vulnerable path (because it is unauthenticated and amount is unused).
@@ -154,8 +145,6 @@ fn setup() -> (Env, Address, Address) {
             PublicRoleGrant::vulnerable_entry(_env.clone(), attacker.clone(), 0)
         });
 
-
-
         let is_op = _env.as_contract(&contract_id, || {
             PublicRoleGrant::is_operator(_env.clone(), attacker.clone())
         });
@@ -166,15 +155,12 @@ fn setup() -> (Env, Address, Address) {
             PublicRoleGrant::operator_only_action(_env.clone(), attacker.clone())
         });
         assert_eq!(out, 1);
-
-
     }
 
     /// Secure mirror is expected to require admin auth for operator grants.
     #[test]
     #[should_panic]
     fn test_secure_path_rejects_unauthenticated_operator_grant() {
-
         let env = Env::default();
 
         let admin = Address::generate(&env);
@@ -185,17 +171,16 @@ fn setup() -> (Env, Address, Address) {
 
         // Attacker tries to call secure grant without auth.
         // `admin.require_auth()` should abort the call.
-        let _ = crate::secure::SecureRoleGrant::grant_operator_secure(env.clone(), attacker.clone(), 0);
+        let _ =
+            crate::secure::SecureRoleGrant::grant_operator_secure(env.clone(), attacker.clone(), 0);
 
         // If it didn't panic, ensure invariant is not met.
         assert!(!crate::secure::SecureRoleGrant::is_operator(env, attacker));
-
     }
 
     #[test]
     #[should_panic]
     fn test_secure_path_preserves_invariant_when_called_without_auth() {
-
         let env = Env::default();
         let contract_id = env.register_contract(None, crate::secure::SecureRoleGrant);
         let client = crate::secure::SecureRoleGrantClient::new(&env, &contract_id);
@@ -216,13 +201,10 @@ fn setup() -> (Env, Address, Address) {
     }
 }
 
-
 // Re-export secure module for tests.
+#[cfg(not(target_family = "wasm"))]
 pub mod secure {
     // Expose the mirror implementation to unit tests as a module.
     // The included file must not contain inner attributes like `#![no_std]`.
     include!("secure.rs");
 }
-
-
-

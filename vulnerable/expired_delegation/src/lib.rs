@@ -15,6 +15,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 // ── Storage keys ─────────────────────────────────────────────────────────────
@@ -45,9 +46,13 @@ impl VulnerableAdminContract {
     /// The expiry is stored but never enforced.
     pub fn delegate_admin(env: Env, delegate: Address, expiry_ledger: u32) {
         Self::require_admin(&env);
-        env.storage().persistent().set(&DataKey::Delegate, &delegate);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Delegate, &delegate);
         // Stored but never read back during auth checks — the vulnerability.
-        env.storage().persistent().set(&DataKey::DelegateExpiry, &expiry_ledger);
+        env.storage()
+            .persistent()
+            .set(&DataKey::DelegateExpiry, &expiry_ledger);
     }
 
     /// A privileged action gated by admin-or-delegate.
@@ -93,7 +98,10 @@ impl VulnerableAdminContract {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::{Address as _, Ledger as _}, Address, Env};
+    use soroban_sdk::{
+        testutils::{Address as _, Ledger as _},
+        Address, Env,
+    };
 
     fn setup() -> (Env, Address, Address, Address) {
         let env = Env::default();

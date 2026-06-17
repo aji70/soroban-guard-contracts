@@ -1,5 +1,5 @@
-use soroban_sdk::{contract, contractimpl, Address, Env};
 use super::{get_rate, get_stake, get_staked_at, set_stake, set_staked_at};
+use soroban_sdk::{contract, contractimpl, Address, Env};
 
 #[contract]
 pub struct SecureStake;

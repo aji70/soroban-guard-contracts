@@ -14,6 +14,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 pub const MAX_HOOK_DEPTH: u32 = 1;

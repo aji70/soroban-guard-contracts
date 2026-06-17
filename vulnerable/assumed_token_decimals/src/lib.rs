@@ -12,6 +12,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 /// Hardcoded assumed decimal precision — the bug.

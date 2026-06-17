@@ -33,9 +33,7 @@ impl SecureLending {
 
         let key = DataKey::Collateral(borrower);
         let current: i128 = env.storage().persistent().get(&key).unwrap_or(0);
-        let updated = current
-            .checked_add(amount)
-            .expect("collateral overflow");
+        let updated = current.checked_add(amount).expect("collateral overflow");
         env.storage().persistent().set(&key, &updated);
     }
 
@@ -102,7 +100,9 @@ impl SecureLending {
         env.storage()
             .persistent()
             .set(&DataKey::Collateral(borrower.clone()), &0i128);
-        env.storage().persistent().set(&DataKey::Debt(borrower), &0i128);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Debt(borrower), &0i128);
     }
 
     pub fn get_position(env: Env, borrower: Address) -> (i128, i128) {
@@ -134,17 +134,17 @@ mod tests {
     use super::*;
     use soroban_sdk::{testutils::Address as _, Address, Env};
 
-    fn setup() -> (Env, SecureLendingClient<'static>) {
+    fn setup() -> (Env, Address, SecureLendingClient<'static>) {
         let env = Env::default();
         let contract_id = env.register_contract(None, SecureLending);
         let client = SecureLendingClient::new(&env, &contract_id);
-        (env, client)
+        (env, contract_id, client)
     }
 
     #[test]
     #[should_panic(expected = "insufficient collateral")]
     fn test_borrow_without_sufficient_collateral_panics() {
-        let (env, client) = setup();
+        let (env, _contract_id, client) = setup();
         let borrower = Address::generate(&env);
         env.mock_all_auths();
 
@@ -155,7 +155,7 @@ mod tests {
 
     #[test]
     fn test_position_below_liquidation_threshold_can_be_liquidated_by_any_caller() {
-        let (env, client) = setup();
+        let (env, contract_id, client) = setup();
         let borrower = Address::generate(&env);
         let liquidator = Address::generate(&env);
         env.mock_all_auths();
@@ -165,9 +165,11 @@ mod tests {
         client.borrow(&borrower, &100);
 
         // Simulate collateral value drop (e.g. oracle repricing) by lowering stored collateral.
-        env.storage()
-            .persistent()
-            .set(&DataKey::Collateral(borrower.clone()), &110i128);
+        env.as_contract(&contract_id, || {
+            env.storage()
+                .persistent()
+                .set(&DataKey::Collateral(borrower.clone()), &110i128);
+        });
 
         client.liquidate(&borrower, &liquidator);
         assert_eq!(client.get_position(&borrower), (0, 0));
@@ -175,7 +177,7 @@ mod tests {
 
     #[test]
     fn test_repay_restores_borrower_collateral_access() {
-        let (env, client) = setup();
+        let (env, _contract_id, client) = setup();
         let borrower = Address::generate(&env);
         env.mock_all_auths();
 

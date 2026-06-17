@@ -23,6 +23,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
@@ -142,6 +143,7 @@ impl FlashLoanNoCheck {
 // Records repayment in the RepaymentLedger (a neutral contract not in the
 // call stack), then the lender reads it after the callback returns.
 
+#[cfg(not(target_family = "wasm"))]
 pub mod honest {
     use super::{DataKey, RepaymentLedgerClient};
     use soroban_sdk::{contract, contractimpl, Address, Env};
@@ -164,6 +166,7 @@ pub mod honest {
 
 // ── Dishonest borrower ────────────────────────────────────────────────────────
 
+#[cfg(not(target_family = "wasm"))]
 pub mod dishonest {
     use soroban_sdk::{contract, contractimpl, Address, Env};
 

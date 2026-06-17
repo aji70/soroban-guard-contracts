@@ -6,7 +6,8 @@
 
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, token, Address, Bytes, BytesN, Env, Vec,
+    contract, contractimpl, contracttype, symbol_short, token, xdr::ToXdr, Address, Bytes, BytesN,
+    Env, Vec,
 };
 
 #[contracttype]
@@ -26,7 +27,7 @@ fn leaf_hash(env: &Env, claimant: &Address, amount: i128) -> BytesN<32> {
     let mut data = Bytes::new(env);
     data.append(&claimant.to_xdr(env));
     data.extend_from_array(&amount.to_be_bytes());
-    env.crypto().sha256(&data)
+    env.crypto().sha256(&data).into()
 }
 
 /// Hash two 32-byte nodes together, smaller first (canonical ordering).
@@ -39,15 +40,10 @@ fn hash_pair(env: &Env, a: &BytesN<32>, b: &BytesN<32>) -> BytesN<32> {
         data.append(&Bytes::from(b.clone()));
         data.append(&Bytes::from(a.clone()));
     }
-    env.crypto().sha256(&data)
+    env.crypto().sha256(&data).into()
 }
 
-fn verify_merkle_proof(
-    env: &Env,
-    claimant: &Address,
-    amount: i128,
-    proof: &Vec<BytesN<32>>,
-) {
+fn verify_merkle_proof(env: &Env, claimant: &Address, amount: i128, proof: &Vec<BytesN<32>>) {
     let root: BytesN<32> = env
         .storage()
         .persistent()
@@ -170,7 +166,9 @@ mod tests {
         let other = Address::generate(&env);
 
         let token_admin = Address::generate(&env);
-        let token_id = env.register_stellar_asset_contract_v2(token_admin.clone()).address();
+        let token_id = env
+            .register_stellar_asset_contract_v2(token_admin.clone())
+            .address();
 
         // Mint tokens to admin so they can fund the airdrop
         StellarAssetClient::new(&env, &token_id).mint(&admin, &10_000);

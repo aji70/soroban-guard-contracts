@@ -11,8 +11,9 @@
 //!   checked against the approved-scanner registry.
 
 #![no_std]
-extern crate alloc;
-use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Map, String, Vec};
+use soroban_sdk::{
+    contract, contractimpl, contracttype, symbol_short, Address, Env, Map, String, Vec,
+};
 
 // ── Severity label constants ─────────────────────────────────────────────────
 
@@ -60,14 +61,19 @@ pub struct ScanEntry {
 pub enum DataKey {
     Admin,
     Scanner(Address),
+    ScannerCount,
     LatestScan(Address),
     ScanHistory(Address),
     /// Set of all contract addresses that have at least one scan (used as an index)
     SeverityIndex,
+    /// Whether a contract is active (default true); set to false to deactivate
+    ContractActive(Address),
     /// Reputation score for a scanner address (i32, default 0)
     ScannerScore(Address),
     /// Human-readable metadata for a contract address
     Metadata(Address),
+    /// Ordered list of all scanned contract addresses
+    ScannedContracts,
 }
 
 // ── Contract ─────────────────────────────────────────────────────────────────
@@ -152,8 +158,10 @@ impl ScanRegistry {
                 .persistent()
                 .set(&DataKey::ScannerCount, &count.saturating_sub(1));
         }
-        env.events()
-            .publish((symbol_short!("scanner"), symbol_short!("removed")), scanner);
+        env.events().publish(
+            (symbol_short!("scanner"), symbol_short!("removed")),
+            scanner,
+        );
     }
 
     pub fn is_scanner(env: Env, scanner: Address) -> bool {
@@ -217,9 +225,10 @@ impl ScanRegistry {
             findings_hash: findings_hash.clone(),
             severity_counts,
         };
-        Self::store_result(&env, contract_address, result);
+        Self::store_result(&env, contract_address, result, score_key);
     }
 
+    fn store_result(env: &Env, contract_address: Address, result: ScanResult, score_key: DataKey) {
         env.storage()
             .persistent()
             .set(&DataKey::LatestScan(contract_address.clone()), &result);
@@ -230,7 +239,7 @@ impl ScanRegistry {
             .storage()
             .persistent()
             .get(&history_key)
-            .unwrap_or(Vec::new(&env));
+            .unwrap_or(Vec::new(env));
         history.push_back(result);
         env.storage().persistent().set(&history_key, &history);
 
@@ -240,10 +249,23 @@ impl ScanRegistry {
             .storage()
             .persistent()
             .get(&index_key)
-            .unwrap_or(Map::new(&env));
+            .unwrap_or(Map::new(env));
         if !index.contains_key(contract_address.clone()) {
-            index.set(contract_address, ());
+            index.set(contract_address.clone(), ());
             env.storage().persistent().set(&index_key, &index);
+        }
+
+        // Maintain the flat list of all scanned contract addresses.
+        let mut scanned: Vec<Address> = env
+            .storage()
+            .persistent()
+            .get(&DataKey::ScannedContracts)
+            .unwrap_or(Vec::new(env));
+        if !scanned.contains(&contract_address) {
+            scanned.push_back(contract_address);
+            env.storage()
+                .persistent()
+                .set(&DataKey::ScannedContracts, &scanned);
         }
         // Increment scanner reputation score.
         let score: i32 = env.storage().persistent().get(&score_key).unwrap_or(0i32);
@@ -329,7 +351,8 @@ impl ScanRegistry {
                 .persistent()
                 .get::<DataKey, ScanResult>(&DataKey::LatestScan(addr.clone()))
             {
-                let critical = Self::get_severity_count(&env, &scan.severity_counts, SEVERITY_CRITICAL);
+                let critical =
+                    Self::get_severity_count(&env, &scan.severity_counts, SEVERITY_CRITICAL);
                 let high = Self::get_severity_count(&env, &scan.severity_counts, SEVERITY_HIGH);
                 if critical >= min_critical && high >= min_high {
                     matches.push_back(addr);
@@ -353,6 +376,8 @@ impl ScanRegistry {
             result.push_back(matches.get(i).unwrap());
         }
         result
+    }
+
     /// Return the total number of scan results stored for a contract address.
     ///
     /// # Arguments
@@ -398,12 +423,12 @@ impl ScanRegistry {
             return Vec::new(&env);
         }
 
-        let end = (start + page_size).min(total);
+        let end = (offset + effective_limit).min(total);
         let mut page_results: Vec<ScanResult> = Vec::new(&env);
-        for i in start..end {
+        for i in offset..end {
             page_results.push_back(history.get(i).expect("history index out of bounds"));
         }
-        result
+        page_results
     }
 
     /// Retrieve the latest scan result for each contract in the batch.
@@ -413,10 +438,7 @@ impl ScanRegistry {
     ///
     /// # Panics
     /// Panics if `contracts.len() > 20`.
-    pub fn get_latest_scans_batch(
-        env: Env,
-        contracts: Vec<Address>,
-    ) -> Vec<Option<ScanResult>> {
+    pub fn get_latest_scans_batch(env: Env, contracts: Vec<Address>) -> Vec<Option<ScanResult>> {
         if contracts.len() > 20 {
             panic!("batch size exceeds maximum of 20");
         }
@@ -431,10 +453,15 @@ impl ScanRegistry {
         results
     }
 
-    /// Return the admin address of the registry.
-    ///
-    /// # Returns
-    /// The admin `Address`.
+    /// Return every contract address that has at least one scan result.
+    pub fn get_all_scanned_contracts(env: Env) -> Vec<Address> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::ScannedContracts)
+            .unwrap_or(Vec::new(&env))
+    }
+
+    /// Return a page of scanned contract addresses.
     ///
     /// `page` is 0-indexed. Returns an empty vec when `page` is out of range.
     pub fn get_scanned_contracts_page(env: Env, page: u32, page_size: u32) -> Vec<Address> {
@@ -455,6 +482,10 @@ impl ScanRegistry {
         result
     }
 
+    /// Return the admin address of the registry.
+    ///
+    /// # Returns
+    /// The admin `Address`.
     pub fn get_admin(env: Env) -> Address {
         env.storage()
             .persistent()
@@ -472,7 +503,12 @@ impl ScanRegistry {
     /// # Panics
     /// Panics if `scanner` has never submitted a scan for `contract_address`,
     /// or if `scanner` has not signed the transaction.
-    pub fn set_metadata(env: Env, scanner: Address, contract_address: Address, metadata: ContractMetadata) {
+    pub fn set_metadata(
+        env: Env,
+        scanner: Address,
+        contract_address: Address,
+        metadata: ContractMetadata,
+    ) {
         scanner.require_auth();
 
         // Verify the scanner has an existing scan result for this contract.
@@ -522,6 +558,7 @@ impl ScanRegistry {
 
 #[cfg(test)]
 mod tests {
+    extern crate alloc;
     use super::*;
     use soroban_sdk::{map, testutils::Address as _, testutils::Events, Address, Env, String};
 
@@ -562,14 +599,30 @@ mod tests {
         let target = Address::generate(&env);
 
         client.add_scanner(&scanner);
-        client.submit_scan(&scanner, &target, &String::from_str(&env, "hash1"), &counts(&env));
-        client.submit_scan(&scanner, &target, &String::from_str(&env, "hash2"), &counts(&env));
+        client.submit_scan(
+            &scanner,
+            &target,
+            &String::from_str(&env, "hash1"),
+            &counts(&env),
+        );
+        client.submit_scan(
+            &scanner,
+            &target,
+            &String::from_str(&env, "hash2"),
+            &counts(&env),
+        );
 
         // Use get_history_page to read both records (offset=0, limit=50).
         let history = client.get_history_page(&target, &0, &50);
         assert_eq!(history.len(), 2);
-        assert_eq!(history.get(0).unwrap().findings_hash, String::from_str(&env, "hash1"));
-        assert_eq!(history.get(1).unwrap().findings_hash, String::from_str(&env, "hash2"));
+        assert_eq!(
+            history.get(0).unwrap().findings_hash,
+            String::from_str(&env, "hash1")
+        );
+        assert_eq!(
+            history.get(1).unwrap().findings_hash,
+            String::from_str(&env, "hash2")
+        );
     }
 
     #[test]
@@ -578,7 +631,12 @@ mod tests {
         let (env, contract_id, _admin, scanner) = setup();
         let client = ScanRegistryClient::new(&env, &contract_id);
         let target = Address::generate(&env);
-        client.submit_scan(&scanner, &target, &String::from_str(&env, "badhash"), &counts(&env));
+        client.submit_scan(
+            &scanner,
+            &target,
+            &String::from_str(&env, "badhash"),
+            &counts(&env),
+        );
     }
 
     #[test]
@@ -592,7 +650,12 @@ mod tests {
         client.remove_scanner(&scanner);
         assert!(!client.is_scanner(&scanner));
 
-        client.submit_scan(&scanner, &target, &String::from_str(&env, "hash"), &counts(&env));
+        client.submit_scan(
+            &scanner,
+            &target,
+            &String::from_str(&env, "hash"),
+            &counts(&env),
+        );
     }
 
     // ── Scanned-contracts index tests ────────────────────────────────────────
@@ -622,8 +685,18 @@ mod tests {
         let target = Address::generate(&env);
 
         client.add_scanner(&scanner);
-        client.submit_scan(&scanner, &target, &String::from_str(&env, "h1"), &counts(&env));
-        client.submit_scan(&scanner, &target, &String::from_str(&env, "h2"), &counts(&env));
+        client.submit_scan(
+            &scanner,
+            &target,
+            &String::from_str(&env, "h1"),
+            &counts(&env),
+        );
+        client.submit_scan(
+            &scanner,
+            &target,
+            &String::from_str(&env, "h2"),
+            &counts(&env),
+        );
 
         let all = client.get_all_scanned_contracts();
         assert_eq!(all.len(), 1);
@@ -634,11 +707,14 @@ mod tests {
         let (env, contract_id, _admin, scanner) = setup();
         let client = ScanRegistryClient::new(&env, &contract_id);
 
-        let targets: Vec<Address> = (0..5).map(|_| Address::generate(&env)).collect();
+        let mut targets: Vec<Address> = Vec::new(&env);
+        for _ in 0..5 {
+            targets.push_back(Address::generate(&env));
+        }
 
         client.add_scanner(&scanner);
-        for t in &targets {
-            client.submit_scan(&scanner, t, &String::from_str(&env, "h"), &counts(&env));
+        for t in targets.iter() {
+            client.submit_scan(&scanner, &t, &String::from_str(&env, "h"), &counts(&env));
         }
 
         // Page 0, size 2 → first 2
@@ -673,19 +749,31 @@ mod tests {
             &scanner,
             &target_low,
             &String::from_str(&env, "h1"),
-            &map![&env, (String::from_str(&env, "critical"), 0u32), (String::from_str(&env, "high"), 0u32)],
+            &map![
+                &env,
+                (String::from_str(&env, "critical"), 0u32),
+                (String::from_str(&env, "high"), 0u32)
+            ],
         );
         client.submit_scan(
             &scanner,
             &target_high,
             &String::from_str(&env, "h2"),
-            &map![&env, (String::from_str(&env, "critical"), 0u32), (String::from_str(&env, "high"), 2u32)],
+            &map![
+                &env,
+                (String::from_str(&env, "critical"), 0u32),
+                (String::from_str(&env, "high"), 2u32)
+            ],
         );
         client.submit_scan(
             &scanner,
             &target_crit,
             &String::from_str(&env, "h3"),
-            &map![&env, (String::from_str(&env, "critical"), 1u32), (String::from_str(&env, "high"), 1u32)],
+            &map![
+                &env,
+                (String::from_str(&env, "critical"), 1u32),
+                (String::from_str(&env, "high"), 1u32)
+            ],
         );
 
         // Require at least 1 critical and 1 high
@@ -731,7 +819,11 @@ mod tests {
             &scanner,
             &target,
             &String::from_str(&env, "h1"),
-            &map![&env, (String::from_str(&env, "critical"), 1u32), (String::from_str(&env, "high"), 1u32)],
+            &map![
+                &env,
+                (String::from_str(&env, "critical"), 1u32),
+                (String::from_str(&env, "high"), 1u32)
+            ],
         );
 
         let results = client.get_scans_by_min_severity(&100, &100, &0, &0);
@@ -778,6 +870,8 @@ mod tests {
         // page 2, size 2 -> empty
         let page2 = client.get_scans_by_min_severity(&1, &0, &2, &2);
         assert_eq!(page2.len(), 0);
+    }
+
     // ── Reputation tests ─────────────────────────────────────────────────────
 
     #[test]
@@ -794,10 +888,20 @@ mod tests {
         let target = Address::generate(&env);
 
         client.add_scanner(&scanner);
-        client.submit_scan(&scanner, &target, &String::from_str(&env, "h1"), &counts);
+        client.submit_scan(
+            &scanner,
+            &target,
+            &String::from_str(&env, "h1"),
+            &counts(&env),
+        );
         assert_eq!(client.get_scanner_score(&scanner), 1);
 
-        client.submit_scan(&scanner, &target, &String::from_str(&env, "h2"), &counts);
+        client.submit_scan(
+            &scanner,
+            &target,
+            &String::from_str(&env, "h2"),
+            &counts(&env),
+        );
         assert_eq!(client.get_scanner_score(&scanner), 2);
     }
 
@@ -826,6 +930,10 @@ mod tests {
         n: u32,
         env: &Env,
     ) {
+        // Submitting many records into one growing history Vec is exactly the
+        // unbounded-growth pattern this fixture demonstrates; give the test
+        // budget plenty of headroom so we can build up a large history.
+        env.budget().reset_unlimited();
         // Pre-defined hash labels — supports up to 8 scans in tests.
         let hashes = [
             "hash0", "hash1", "hash2", "hash3", "hash4", "hash5", "hash6", "hash7",
@@ -873,16 +981,16 @@ mod tests {
         client.add_scanner(&scanner);
         submit_n_scans(&client, &scanner, &target, 200, &env);
 
-        // page 1 with page_size 3 → items [3, 4] (2 items)
-        let page = client.get_history_page(&target, &1, &3);
-        assert_eq!(page.len(), 2);
+        // offset 0 with limit 50 → exactly 50 records, even though 200 exist.
+        let page = client.get_history_page(&target, &0, &50);
+        assert_eq!(page.len(), 50);
         assert_eq!(
             page.get(0).unwrap().findings_hash,
-            String::from_str(&env, "hash3")
+            String::from_str(&env, "hash0")
         );
         assert_eq!(
-            page.get(1).unwrap().findings_hash,
-            String::from_str(&env, "hash4")
+            page.get(49).unwrap().findings_hash,
+            String::from_str(&env, "hash49")
         );
     }
 
@@ -914,8 +1022,14 @@ mod tests {
         // offset=8, limit=50 → only 2 records remain (indices 8 and 9).
         let page = client.get_history_page(&target, &8, &50);
         assert_eq!(page.len(), 2);
-        assert_eq!(page.get(0).unwrap().findings_hash, String::from_str(&env, "hash8"));
-        assert_eq!(page.get(1).unwrap().findings_hash, String::from_str(&env, "hash9"));
+        assert_eq!(
+            page.get(0).unwrap().findings_hash,
+            String::from_str(&env, "hash8")
+        );
+        assert_eq!(
+            page.get(1).unwrap().findings_hash,
+            String::from_str(&env, "hash9")
+        );
     }
 
     #[test]
@@ -973,7 +1087,10 @@ mod tests {
         assert_eq!(stored.name, String::from_str(&env, "MyToken"));
         assert_eq!(stored.version, String::from_str(&env, "1.0.0"));
         assert_eq!(stored.audit_date, 1_700_000_000u64);
-        assert_eq!(stored.repo_url, String::from_str(&env, "https://github.com/example/mytoken"));
+        assert_eq!(
+            stored.repo_url,
+            String::from_str(&env, "https://github.com/example/mytoken")
+        );
     }
 
     #[test]
@@ -1068,8 +1185,14 @@ mod tests {
 
         let results = client.get_latest_scans_batch(&batch);
         assert_eq!(results.len(), 3);
-        assert_eq!(results.get(0).unwrap().unwrap().findings_hash, String::from_str(&env, "h1"));
-        assert_eq!(results.get(1).unwrap().unwrap().findings_hash, String::from_str(&env, "h2"));
+        assert_eq!(
+            results.get(0).unwrap().unwrap().findings_hash,
+            String::from_str(&env, "h1")
+        );
+        assert_eq!(
+            results.get(1).unwrap().unwrap().findings_hash,
+            String::from_str(&env, "h2")
+        );
         assert!(results.get(2).unwrap().is_none());
     }
 
@@ -1082,4 +1205,3 @@ mod tests {
         assert_eq!(results.len(), 0);
     }
 }
-

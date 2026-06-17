@@ -15,6 +15,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 // ── Token interface (cross-contract) ─────────────────────────────────────────
@@ -74,81 +75,94 @@ impl VulnerableVault {
 
 // ── Mock fee token (10% fee on every transfer) ────────────────────────────────
 
-#[contracttype]
-pub enum TokenKey {
-    Balance(Address),
-}
+#[cfg(not(target_family = "wasm"))]
+pub mod fee_token {
+    use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
-#[contract]
-pub struct FeeToken;
-
-#[contractimpl]
-impl FeeToken {
-    pub fn mint(env: Env, to: Address, amount: i128) {
-        let key = TokenKey::Balance(to.clone());
-        let current: i128 = env.storage().persistent().get(&key).unwrap_or(0);
-        env.storage().persistent().set(&key, &(current + amount));
+    #[contracttype]
+    pub enum TokenKey {
+        Balance(Address),
     }
 
-    /// Deducts 10% as a fee; recipient receives only 90% of `amount`.
-    pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
-        let received = amount * 90 / 100; // 10% fee burned
+    #[contract]
+    pub struct FeeToken;
 
-        let from_key = TokenKey::Balance(from.clone());
-        let from_bal: i128 = env.storage().persistent().get(&from_key).unwrap_or(0);
-        assert!(from_bal >= amount, "insufficient balance");
-        env.storage()
-            .persistent()
-            .set(&from_key, &(from_bal - amount));
+    #[contractimpl]
+    impl FeeToken {
+        pub fn mint(env: Env, to: Address, amount: i128) {
+            let key = TokenKey::Balance(to.clone());
+            let current: i128 = env.storage().persistent().get(&key).unwrap_or(0);
+            env.storage().persistent().set(&key, &(current + amount));
+        }
 
-        let to_key = TokenKey::Balance(to.clone());
-        let to_bal: i128 = env.storage().persistent().get(&to_key).unwrap_or(0);
-        env.storage()
-            .persistent()
-            .set(&to_key, &(to_bal + received));
-    }
+        /// Deducts 10% as a fee; recipient receives only 90% of `amount`.
+        pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
+            let received = amount * 90 / 100; // 10% fee burned
 
-    pub fn balance(env: Env, id: Address) -> i128 {
-        env.storage()
-            .persistent()
-            .get(&TokenKey::Balance(id))
-            .unwrap_or(0)
+            let from_key = TokenKey::Balance(from.clone());
+            let from_bal: i128 = env.storage().persistent().get(&from_key).unwrap_or(0);
+            assert!(from_bal >= amount, "insufficient balance");
+            env.storage()
+                .persistent()
+                .set(&from_key, &(from_bal - amount));
+
+            let to_key = TokenKey::Balance(to.clone());
+            let to_bal: i128 = env.storage().persistent().get(&to_key).unwrap_or(0);
+            env.storage()
+                .persistent()
+                .set(&to_key, &(to_bal + received));
+        }
+
+        pub fn balance(env: Env, id: Address) -> i128 {
+            env.storage()
+                .persistent()
+                .get(&TokenKey::Balance(id))
+                .unwrap_or(0)
+        }
     }
 }
 
 // ── Standard token (0% fee) ───────────────────────────────────────────────────
 
-#[contract]
-pub struct StandardToken;
+#[cfg(not(target_family = "wasm"))]
+pub mod standard_token {
+    use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
-#[contractimpl]
-impl StandardToken {
-    pub fn mint(env: Env, to: Address, amount: i128) {
-        let key = TokenKey::Balance(to.clone());
-        let current: i128 = env.storage().persistent().get(&key).unwrap_or(0);
-        env.storage().persistent().set(&key, &(current + amount));
+    #[contracttype]
+    pub enum TokenKey {
+        Balance(Address),
     }
 
-    pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
-        let from_key = TokenKey::Balance(from.clone());
-        let from_bal: i128 = env.storage().persistent().get(&from_key).unwrap_or(0);
-        assert!(from_bal >= amount, "insufficient balance");
-        env.storage()
-            .persistent()
-            .set(&from_key, &(from_bal - amount));
+    #[contract]
+    pub struct StandardToken;
 
-        let to_key = TokenKey::Balance(to.clone());
-        let to_bal: i128 = env.storage().persistent().get(&to_key).unwrap_or(0);
-        env.storage()
-            .persistent()
-            .set(&to_key, &(to_bal + amount));
-    }
+    #[contractimpl]
+    impl StandardToken {
+        pub fn mint(env: Env, to: Address, amount: i128) {
+            let key = TokenKey::Balance(to.clone());
+            let current: i128 = env.storage().persistent().get(&key).unwrap_or(0);
+            env.storage().persistent().set(&key, &(current + amount));
+        }
 
-    pub fn balance(env: Env, id: Address) -> i128 {
-        env.storage()
-            .persistent()
-            .get(&TokenKey::Balance(id))
-            .unwrap_or(0)
+        pub fn transfer(env: Env, from: Address, to: Address, amount: i128) {
+            let from_key = TokenKey::Balance(from.clone());
+            let from_bal: i128 = env.storage().persistent().get(&from_key).unwrap_or(0);
+            assert!(from_bal >= amount, "insufficient balance");
+            env.storage()
+                .persistent()
+                .set(&from_key, &(from_bal - amount));
+
+            let to_key = TokenKey::Balance(to.clone());
+            let to_bal: i128 = env.storage().persistent().get(&to_key).unwrap_or(0);
+            env.storage().persistent().set(&to_key, &(to_bal + amount));
+        }
+
+        pub fn balance(env: Env, id: Address) -> i128 {
+            env.storage()
+                .persistent()
+                .get(&TokenKey::Balance(id))
+                .unwrap_or(0)
+        }
     }
 }
 
@@ -157,8 +171,10 @@ impl StandardToken {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::Address as _, Address, Env};
+    use fee_token::{FeeToken, FeeTokenClient};
     use secure::SecureVaultClient;
+    use soroban_sdk::{testutils::Address as _, Address, Env};
+    use standard_token::{StandardToken, StandardTokenClient};
 
     // ── Exploit simulation: bug exists ────────────────────────────────────────
 
@@ -191,7 +207,10 @@ mod tests {
             user_vault_balance > vault_token_balance,
             "exploit: internal credit ({user_vault_balance}) exceeds actual holdings ({vault_token_balance})"
         );
-        assert_eq!(user_vault_balance, 100, "vulnerable vault overcredits to 100");
+        assert_eq!(
+            user_vault_balance, 100,
+            "vulnerable vault overcredits to 100"
+        );
     }
 
     // ── Fix verification: secure vault credits only actual received ───────────

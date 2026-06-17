@@ -15,6 +15,7 @@ use soroban_sdk::{
     Vec,
 };
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 #[contracttype]

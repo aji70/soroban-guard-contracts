@@ -14,6 +14,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 // ── Storage keys ──────────────────────────────────────────────────────────────
@@ -51,8 +52,12 @@ impl VulnerableMarket {
         assert!(max_move_bps > 0, "threshold must be positive");
 
         env.storage().persistent().set(&DataKey::Admin, &admin);
-        env.storage().persistent().set(&DataKey::Price, &initial_price);
-        env.storage().persistent().set(&DataKey::MaxMoveBps, &max_move_bps);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Price, &initial_price);
+        env.storage()
+            .persistent()
+            .set(&DataKey::MaxMoveBps, &max_move_bps);
         env.storage().persistent().set(&DataKey::Paused, &false);
     }
 
@@ -78,7 +83,10 @@ impl VulnerableMarket {
 
         // ❌ Missing: compare new_price against old_price using max_move_bps.
         // The fixture makes this unsafe path reachable and easy to scan.
-        let _ = env.storage().persistent().get::<DataKey, u32>(&DataKey::MaxMoveBps); // read but discarded
+        let _ = env
+            .storage()
+            .persistent()
+            .get::<DataKey, u32>(&DataKey::MaxMoveBps); // read but discarded
         env.storage().persistent().set(&DataKey::Price, &new_price);
     }
 
@@ -167,8 +175,11 @@ mod tests {
         env.mock_all_auths();
         let contract_id = env.register_contract(None, VulnerableMarket);
         let admin = Address::generate(&env);
-        VulnerableMarketClient::new(&env, &contract_id)
-            .initialize(&admin, &INITIAL_PRICE, &MAX_MOVE_BPS);
+        VulnerableMarketClient::new(&env, &contract_id).initialize(
+            &admin,
+            &INITIAL_PRICE,
+            &MAX_MOVE_BPS,
+        );
         (env, contract_id, admin)
     }
 

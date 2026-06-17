@@ -14,6 +14,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, symbol_short, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 // ── Contract ─────────────────────────────────────────────────────────────────

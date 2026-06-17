@@ -3,8 +3,8 @@
 //! Identical token but `transfer_from` calls `delegate.require_auth()` to
 //! bind the signer to the allowance being consumed.
 
-use soroban_sdk::{contract, contractimpl, Address, Env};
 use super::{get_allowance, get_balance, set_allowance, set_balance};
+use soroban_sdk::{contract, contractimpl, Address, Env};
 
 #[contract]
 pub struct SecureToken;

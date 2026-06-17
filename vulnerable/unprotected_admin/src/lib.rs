@@ -53,7 +53,10 @@ impl EscrowContract {
     }
 
     pub fn get_admin(env: Env) -> Address {
-        env.storage().persistent().get(&DataKey::Admin).expect("admin not initialized")
+        env.storage()
+            .persistent()
+            .get(&DataKey::Admin)
+            .expect("admin not initialized")
     }
 }
 

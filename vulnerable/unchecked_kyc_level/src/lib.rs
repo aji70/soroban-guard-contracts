@@ -14,6 +14,7 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
 
+#[cfg(not(target_family = "wasm"))]
 pub mod secure;
 
 pub const MAX_KYC_LEVEL: u32 = 3;
@@ -81,7 +82,11 @@ mod tests {
         let user = Address::generate(&env);
 
         client.set_kyc_level(&user, &999);
-        assert_eq!(client.get_kyc_level(&user), 999, "out-of-range level was stored");
+        assert_eq!(
+            client.get_kyc_level(&user),
+            999,
+            "out-of-range level was stored"
+        );
     }
 
     /// Secure version panics for any level above MAX_KYC_LEVEL.

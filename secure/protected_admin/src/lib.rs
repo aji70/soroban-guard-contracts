@@ -101,15 +101,9 @@ impl ProtectedAdmin {
         // Only the pending admin may accept.
         pending.require_auth();
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::Admin, &pending);
-        env.storage()
-            .persistent()
-            .remove(&DataKey::PendingAdmin);
-        env.storage()
-            .persistent()
-            .remove(&DataKey::PendingExpiry);
+        env.storage().persistent().set(&DataKey::Admin, &pending);
+        env.storage().persistent().remove(&DataKey::PendingAdmin);
+        env.storage().persistent().remove(&DataKey::PendingExpiry);
     }
 
     // ── Fast-path (deprecated) ───────────────────────────────────────────────
@@ -180,7 +174,7 @@ impl ProtectedAdmin {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::{testutils::Address as _, Address, Env, String};
+    use soroban_sdk::{testutils::Address as _, testutils::Ledger, Address, Env, String};
 
     fn setup() -> (Env, Address, Address) {
         let env = Env::default();
@@ -237,10 +231,27 @@ mod tests {
 
         client.propose_admin(&new_admin);
 
+        // Test-env persistent entries default to a TTL (4096 ledgers) far
+        // shorter than PROPOSAL_TTL_LEDGERS, so extend them first — otherwise
+        // advancing the ledger below archives the entries before the
+        // contract's own "proposal expired" check is ever reached.
+        let new_ttl = PROPOSAL_TTL_LEDGERS + 100;
+        env.as_contract(&contract_id, || {
+            env.storage().instance().extend_ttl(new_ttl, new_ttl);
+            env.storage()
+                .persistent()
+                .extend_ttl(&DataKey::Admin, new_ttl, new_ttl);
+            env.storage()
+                .persistent()
+                .extend_ttl(&DataKey::PendingAdmin, new_ttl, new_ttl);
+            env.storage()
+                .persistent()
+                .extend_ttl(&DataKey::PendingExpiry, new_ttl, new_ttl);
+        });
+
         // Advance ledger past the TTL.
-        env.ledger().set_sequence_number(
-            env.ledger().sequence() + PROPOSAL_TTL_LEDGERS + 1,
-        );
+        env.ledger()
+            .set_sequence_number(env.ledger().sequence() + PROPOSAL_TTL_LEDGERS + 1);
 
         client.accept_admin();
     }

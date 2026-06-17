@@ -134,9 +134,9 @@ mod tests {
         let stored_commitment = client.get_commitment();
         assert_eq!(stored_commitment, hash);
         // Raw secret is never stored — DataKey::SecretKey is absent
-        assert!(!env
-            .storage()
-            .persistent()
-            .has(&DataKey::SecretKey));
+        let has_secret_key = env.as_contract(&contract_id, || {
+            env.storage().persistent().has(&DataKey::SecretKey)
+        });
+        assert!(!has_secret_key);
     }
 }
