@@ -31,6 +31,7 @@ members = [
     "vulnerable/no_min_stake",
     "vulnerable/operator_role_not_enforced",
     "vulnerable/reentrancy",
+    "vulnerable/reward_checkpoint_missing",
     "vulnerable/reinit_attack",
     "vulnerable/scanner_impersonation",
     "vulnerable/self_stake",

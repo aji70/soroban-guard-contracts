@@ -10,4 +10,4 @@ repository = "https://github.com/Veritas-Vaults-Network/soroban-guard-contracts"
 crate-type = ["cdylib"]
 
 [dependencies]
-soroban-sdk = { workspace = true }
+soroban-sdk = { workspace = true, features = ["testutils"] }

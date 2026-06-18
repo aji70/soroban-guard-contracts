@@ -172,3 +172,5 @@ mod tests {
         assert!(reward > 0, "post-deposit rewards accrue correctly");
     }
 }
+
+pub mod secure;

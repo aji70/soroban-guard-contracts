@@ -386,7 +386,75 @@ and extract unlimited rewards from a single stake.
 
 ---
 
-## 11. Division by Zero (`div_by_zero`)
+## 11. Reward Checkpoint Missing (`reward_checkpoint_missing`)
+
+**Contract:** `vulnerable/reward_checkpoint_missing` → `vulnerable/reward_checkpoint_missing/src/secure.rs`
+**Severity:** High
+
+### What it is
+
+A staking contract using the standard MasterChef-style global accumulator pattern
+fails to snapshot the accumulator into the user's `reward_debt` when new stake is
+added. The `reward_debt` is meant to record the accumulator value at deposit time,
+so that pending rewards only accrue from that point forward. Without this checkpoint,
+a late depositor inherits a debt of 0 and can immediately claim all accumulated
+rewards that were earned before they joined.
+
+### Vulnerable pattern
+
+```rust
+pub fn stake(env: Env, user: Address, amount: u64) {
+    user.require_auth();
+    let acc = get_acc(&env);
+    let current_stake = get_stake(&env, &user);
+
+    // ❌ Missing: set_reward_debt(&env, &user, acc * (current_stake + amount));
+    // debt defaults to 0, so a late depositor can claim all historical rewards
+    env.storage().persistent().set(
+        &DataKey::Stake(user.clone()),
+        &(current_stake + amount)
+    );
+}
+```
+
+Pending rewards are computed as:
+```
+pending = (acc_reward_per_share × user_stake) - user_reward_debt
+```
+
+Without the checkpoint, `debt = 0`, so `pending = acc × stake`, which includes
+all rewards earned before the user even joined.
+
+### Secure fix
+
+```rust
+pub fn stake(env: Env, user: Address, amount: u64) {
+    user.require_auth();
+    let new_total_stake = get_stake_secure(&env, &user).saturating_add(amount);
+    let acc = get_acc_secure(&env);
+
+    // Write the new balance
+    env.storage().persistent().set(
+        &SecureDataKey::Stake(user.clone()),
+        &new_total_stake
+    );
+
+    // ✅ FIX: Set reward_debt to the current accumulator × new stake.
+    // This captures the checkpoint so pending = 0 at deposit time.
+    let new_debt = acc.saturating_mul(new_total_stake) / 1_000_0000;
+    set_debt_secure(&env, &user, new_debt);
+}
+```
+
+### Impact
+
+Historical reward theft: a user who deposits after rewards have already accrued
+can immediately claim those pre-deposit rewards as if they had been staking all
+along. This allows late depositors to extract far more than they contributed.
+
+---
+
+## 12. Division by Zero (`div_by_zero`)
 
 **Contract:** `vulnerable/div_by_zero` → inline secure pattern
 **Severity:** Medium
