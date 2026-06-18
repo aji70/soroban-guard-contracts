@@ -173,4 +173,5 @@ mod tests {
     }
 }
 
-pub mod secure;
+#[cfg(test)]
+mod secure;
